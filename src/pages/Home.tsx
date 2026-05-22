@@ -1,6 +1,38 @@
 import BottomNav from '../components/BottomNav';
 import BalanceCard from '../components/BalanceCard';
 import StatsRow from '../components/StatsRow';
+import TransactionList from '../components/TransactionList';
+import type { Transaction } from '../types';
+
+const sampleTransactions: Transaction[] = [
+  {
+    id: '1',
+    amount: 84200,
+    type: 'expense',
+    category: 'food',
+    note: 'Market groceries',
+    date: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    amount: 450000,
+    type: 'income',
+    category: 'salary',
+    note: 'Monthly salary',
+    date: new Date(Date.now() - 86400000).toISOString(),
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: '3',
+    amount: 15400,
+    type: 'expense',
+    category: 'transport',
+    note: 'Moto taxi',
+    date: new Date(Date.now() - 172800000).toISOString(),
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+];
 
 const Home = () => {
   return (
@@ -22,6 +54,11 @@ const Home = () => {
         dailySpent={8500}
         topCategory="Food"
         savingsPercent={32}
+        currency="RWF"
+      />
+
+      <TransactionList
+        transactions={sampleTransactions}
         currency="RWF"
       />
 
