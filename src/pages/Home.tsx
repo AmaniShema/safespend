@@ -1,5 +1,6 @@
 import BottomNav from '../components/BottomNav';
 import BalanceCard from '../components/BalanceCard';
+import StatsRow from '../components/StatsRow';
 
 const Home = () => {
   return (
@@ -13,6 +14,14 @@ const Home = () => {
         totalBalance={450000}
         weeklyChange={12500}
         weeklyChangePercent={2.4}
+        currency="RWF"
+      />
+
+      <StatsRow
+        dailyBudget={15000}
+        dailySpent={8500}
+        topCategory="Food"
+        savingsPercent={32}
         currency="RWF"
       />
 
