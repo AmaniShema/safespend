@@ -1,5 +1,5 @@
 import { ShoppingCart, Car, Home, Utensils, Plane, Heart, Tv, ArrowDownCircle, MoreHorizontal } from 'lucide-react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { Transaction } from '../types';
 import { formatCurrency } from '../utils/currency';
 
