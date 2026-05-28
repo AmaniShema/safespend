@@ -2,39 +2,24 @@ import BottomNav from '../components/BottomNav';
 import BalanceCard from '../components/BalanceCard';
 import StatsRow from '../components/StatsRow';
 import TransactionList from '../components/TransactionList';
-import type { Transaction } from '../types';
+import { useTransactions } from '../hooks/useTransactions';
 
-const sampleTransactions: Transaction[] = [
-  {
-    id: '1',
-    amount: 84200,
-    type: 'expense',
-    category: 'food',
-    note: 'Market groceries',
-    date: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    amount: 450000,
-    type: 'income',
-    category: 'salary',
-    note: 'Monthly salary',
-    date: new Date(Date.now() - 86400000).toISOString(),
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: '3',
-    amount: 15400,
-    type: 'expense',
-    category: 'transport',
-    note: 'Moto taxi',
-    date: new Date(Date.now() - 172800000).toISOString(),
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-  },
-];
+const CURRENCY = 'RWF';
 
 const Home = () => {
+  const { transactions, totalBalance, isLoading } = useTransactions();
+
+  const topCategory = transactions.length > 0
+    ? Object.entries(
+        transactions
+          .filter((t) => t.type === 'expense')
+          .reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+          }, {} as Record<string, number>)
+      ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
+    : 'N/A';
+
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-24">
       <div className="flex items-center justify-between p-4 pb-0">
@@ -43,24 +28,30 @@ const Home = () => {
       </div>
 
       <BalanceCard
-        totalBalance={450000}
-        weeklyChange={12500}
-        weeklyChangePercent={2.4}
-        currency="RWF"
+        totalBalance={totalBalance}
+        weeklyChange={0}
+        weeklyChangePercent={0}
+        currency={CURRENCY}
       />
 
       <StatsRow
         dailyBudget={15000}
-        dailySpent={8500}
-        topCategory="Food"
+        dailySpent={0}
+        topCategory={topCategory}
         savingsPercent={32}
-        currency="RWF"
+        currency={CURRENCY}
       />
 
-      <TransactionList
-        transactions={sampleTransactions}
-        currency="RWF"
-      />
+      {isLoading ? (
+        <div className="mx-4 mt-6 text-center text-gray-500 text-sm">
+          Loading...
+        </div>
+      ) : (
+        <TransactionList
+          transactions={transactions.slice(0, 10)}
+          currency={CURRENCY}
+        />
+      )}
 
       <BottomNav />
     </div>
