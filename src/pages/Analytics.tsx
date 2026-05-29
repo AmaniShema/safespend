@@ -151,7 +151,7 @@ const Analytics = () => {
                   color: '#fff',
                   fontSize: '12px',
                 }}
-                formatter={(value: number) => [formatCurrency(value, CURRENCY), 'Spent']}
+                formatter={(value) => [formatCurrency(Number(value) || 0, CURRENCY), 'Spent']}
               />
               <Bar dataKey="spent" fill="#10b981" radius={[4, 4, 0, 0]} />
             </BarChart>
