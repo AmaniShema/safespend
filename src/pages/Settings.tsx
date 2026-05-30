@@ -4,11 +4,13 @@ import BottomNav from '../components/BottomNav';
 import { useCurrency } from '../hooks/useCurrency';
 import { CURRENCIES } from '../utils/currency';
 import { getAllTransactions } from '../db/transactions';
+import { exportToPdf } from '../utils/exportPdf';
 
 const Settings = () => {
   const { currency, setCurrency } = useCurrency();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [exportMsg, setExportMsg] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleCurrencySelect = async (code: string) => {
     await setCurrency(code);
@@ -16,26 +18,22 @@ const Settings = () => {
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
+    setExportMsg('');
     try {
       const transactions = await getAllTransactions();
-      const csv = [
-        'ID,Amount,Type,Category,Note,Date',
-        ...transactions.map((t) =>
-          `${t.id},${t.amount},${t.type},${t.category},"${t.note}",${t.date}`
-        ),
-      ].join('\n');
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `safespend_export_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      if (transactions.length === 0) {
+        setExportMsg('No transactions to export');
+        return;
+      }
+      await exportToPdf(transactions, currency);
       setExportMsg('Export successful!');
-      setTimeout(() => setExportMsg(''), 3000);
-    } catch {
-      setExportMsg('Export failed');
+    } catch (err) {
+      console.error(err);
+      setExportMsg('Export failed. Try again.');
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setExportMsg(''), 4000);
     }
   };
 
@@ -47,7 +45,6 @@ const Settings = () => {
         <h1 className="text-xl font-bold">Settings</h1>
       </div>
 
-      {/* Currency picker modal */}
       {showCurrencyPicker && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
           <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800">
@@ -83,7 +80,6 @@ const Settings = () => {
       )}
 
       <div className="p-4 space-y-4 mt-2">
-        {/* Data Management */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
             Data Management
@@ -107,24 +103,28 @@ const Settings = () => {
 
             <button
               onClick={handleExport}
-              className="w-full flex items-center justify-between p-4"
+              disabled={isExporting}
+              className="w-full flex items-center justify-between p-4 disabled:opacity-50"
             >
               <div className="flex items-center gap-3">
                 <Download size={18} className="text-gray-400" />
                 <div className="text-left">
-                  <p className="text-white text-sm">Export Data</p>
-                  <p className="text-gray-500 text-xs">Download as CSV</p>
+                  <p className="text-white text-sm">Export Report</p>
+                  <p className="text-gray-500 text-xs">
+                    {isExporting ? 'Generating PDF...' : 'Download as PDF'}
+                  </p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-gray-600" />
             </button>
           </div>
           {exportMsg && (
-            <p className="text-emerald-400 text-xs mt-2 px-1">{exportMsg}</p>
+            <p className={`text-xs mt-2 px-1 ${exportMsg.includes('fail') ? 'text-red-400' : 'text-emerald-400'}`}>
+              {exportMsg}
+            </p>
           )}
         </div>
 
-        {/* Privacy */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
             Privacy
@@ -147,7 +147,6 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* About */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
             About

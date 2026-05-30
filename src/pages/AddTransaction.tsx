@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Check } from 'lucide-react';
+import { X, Check, Clock } from 'lucide-react';
 import type { TransactionCategory } from '../types';
 import { addTransaction } from '../db/transactions';
+import { getLastPurchase, TRACKED_CATEGORIES } from '../db/tracker';
 
 const categories: { value: TransactionCategory; label: string; emoji: string }[] = [
   { value: 'food', label: 'Food', emoji: '🍽️' },
@@ -16,17 +17,53 @@ const categories: { value: TransactionCategory; label: string; emoji: string }[]
   { value: 'other', label: 'Other', emoji: '···' },
 ];
 
+const daysBetween = (dateStr: string): number => {
+  const past = new Date(dateStr).getTime();
+  const now = new Date().getTime();
+  return Math.round((now - past) / (1000 * 60 * 60 * 24));
+};
+
 const AddTransaction = () => {
   const navigate = useNavigate();
   const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [amount, setAmount] = useState<string>('');
+  const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<TransactionCategory>('food');
-  const [note, setNote] = useState<string>('');
-  const [date, setDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [lastPurchaseHint, setLastPurchaseHint] = useState<string | null>(null);
+
+  // Check last purchase when note or category changes
+  useEffect(() => {
+    const check = async () => {
+      if (
+        note.trim().length < 2 ||
+        !TRACKED_CATEGORIES.includes(category) ||
+        type !== 'expense'
+      ) {
+        setLastPurchaseHint(null);
+        return;
+      }
+
+      const last = await getLastPurchase(note, category);
+      if (last) {
+        const days = daysBetween(last.date);
+        if (days === 0) {
+          setLastPurchaseHint('You bought this today');
+        } else if (days === 1) {
+          setLastPurchaseHint('You last bought this yesterday');
+        } else {
+          setLastPurchaseHint(`You last bought this ${days} days ago`);
+        }
+      } else {
+        setLastPurchaseHint(null);
+      }
+    };
+
+    const timeout = setTimeout(check, 400);
+    return () => clearTimeout(timeout);
+  }, [note, category, type]);
 
   const handleSave = async (): Promise<void> => {
     const parsed = parseFloat(amount);
@@ -47,7 +84,7 @@ const AddTransaction = () => {
         date: new Date(date).toISOString(),
       });
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Failed to save transaction');
       setIsSaving(false);
     }
@@ -102,9 +139,7 @@ const AddTransaction = () => {
               autoFocus
             />
           </div>
-          {error && (
-            <p className="text-red-400 text-sm mt-2">{error}</p>
-          )}
+          {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
         </div>
 
         {/* Category */}
@@ -128,6 +163,33 @@ const AddTransaction = () => {
           </div>
         </div>
 
+        {/* Note */}
+        <div>
+          <p className="text-gray-400 text-sm mb-2">Note</p>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="e.g. Cooking gas, Electricity bill..."
+            className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-emerald-500 transition-colors placeholder-gray-700"
+          />
+
+          {/* Last purchase hint */}
+          {lastPurchaseHint && (
+            <div className="flex items-center gap-2 mt-2 px-1">
+              <Clock size={12} className="text-yellow-400 flex-shrink-0" />
+              <p className="text-yellow-400 text-xs">{lastPurchaseHint}</p>
+            </div>
+          )}
+
+          {/* Tracker notice */}
+          {TRACKED_CATEGORIES.includes(category) && type === 'expense' && (
+            <p className="text-gray-600 text-xs mt-1.5 px-1">
+              💡 Cycle tracking is active for this category
+            </p>
+          )}
+        </div>
+
         {/* Date */}
         <div>
           <p className="text-gray-400 text-sm mb-2">Date</p>
@@ -136,18 +198,6 @@ const AddTransaction = () => {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-emerald-500 transition-colors"
-          />
-        </div>
-
-        {/* Note */}
-        <div>
-          <p className="text-gray-400 text-sm mb-2">Note</p>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a note..."
-            rows={3}
-            className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-emerald-500 transition-colors resize-none placeholder-gray-700"
           />
         </div>
       </div>
