@@ -1,23 +1,63 @@
 import { useState } from 'react';
-import { Check, ChevronRight, Database, Shield, Download } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  Database,
+  Shield,
+  Download,
+  Calendar,
+  FileText,
+} from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { useCurrency } from '../hooks/useCurrency';
 import { CURRENCIES } from '../utils/currency';
 import { getAllTransactions } from '../db/transactions';
 import { exportToPdf } from '../utils/exportPdf';
+import {
+  getReportSchedule,
+  setReportSchedule,
+  generateManualReport,
+  type ReportSchedule,
+} from '../utils/reportScheduler';
+import { useEffect } from 'react';
+
+const SCHEDULE_OPTIONS: { value: ReportSchedule; label: string; desc: string }[] = [
+  { value: 'monthly', label: 'Monthly', desc: 'Auto-generate at start of each month' },
+  { value: 'weekly', label: 'Weekly', desc: 'Auto-generate every 7 days' },
+  { value: 'off', label: 'Off', desc: 'No automatic reports' },
+];
+
+const MANUAL_PERIODS: { value: 'this_month' | 'last_month' | 'this_week'; label: string }[] = [
+  { value: 'this_month', label: 'This Month' },
+  { value: 'last_month', label: 'Last Month' },
+  { value: 'this_week', label: 'This Week' },
+];
 
 const Settings = () => {
   const { currency, setCurrency } = useCurrency();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [exportMsg, setExportMsg] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [schedule, setSchedule] = useState<ReportSchedule>('monthly');
+  const [showManualPicker, setShowManualPicker] = useState(false);
+
+  useEffect(() => {
+    getReportSchedule().then(setSchedule);
+  }, []);
 
   const handleCurrencySelect = async (code: string) => {
     await setCurrency(code);
     setShowCurrencyPicker(false);
   };
 
-  const handleExport = async () => {
+  const handleScheduleSelect = async (value: ReportSchedule) => {
+    await setReportSchedule(value);
+    setSchedule(value);
+    setShowSchedulePicker(false);
+  };
+
+  const handleExportAll = async () => {
     setIsExporting(true);
     setExportMsg('');
     try {
@@ -28,8 +68,7 @@ const Settings = () => {
       }
       await exportToPdf(transactions, currency);
       setExportMsg('Export successful!');
-    } catch (err) {
-      console.error(err);
+    } catch {
       setExportMsg('Export failed. Try again.');
     } finally {
       setIsExporting(false);
@@ -37,7 +76,26 @@ const Settings = () => {
     }
   };
 
+  const handleManualReport = async (
+    period: 'this_month' | 'last_month' | 'this_week'
+  ) => {
+    setShowManualPicker(false);
+    setIsExporting(true);
+    setExportMsg('');
+    try {
+      await generateManualReport(currency, period);
+      setExportMsg('Report generated!');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed';
+      setExportMsg(msg);
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setExportMsg(''), 4000);
+    }
+  };
+
   const selectedCurrency = CURRENCIES.find((c) => c.code === currency);
+  const selectedSchedule = SCHEDULE_OPTIONS.find((s) => s.value === schedule);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-24">
@@ -45,6 +103,7 @@ const Settings = () => {
         <h1 className="text-xl font-bold">Settings</h1>
       </div>
 
+      {/* Currency picker */}
       {showCurrencyPicker && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
           <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800">
@@ -79,15 +138,136 @@ const Settings = () => {
         </div>
       )}
 
+      {/* Schedule picker */}
+      {showSchedulePicker && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
+          <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800">
+            <h2 className="text-white font-semibold mb-4">Report Schedule</h2>
+            <div className="space-y-2">
+              {SCHEDULE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleScheduleSelect(opt.value)}
+                  className="w-full flex items-center justify-between p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors"
+                >
+                  <div className="text-left">
+                    <p className="text-white text-sm font-medium">{opt.label}</p>
+                    <p className="text-gray-400 text-xs mt-0.5">{opt.desc}</p>
+                  </div>
+                  {schedule === opt.value && (
+                    <Check size={16} className="text-emerald-400 flex-shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowSchedulePicker(false)}
+              className="w-full mt-4 py-3 text-gray-400 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Manual period picker */}
+      {showManualPicker && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
+          <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800">
+            <h2 className="text-white font-semibold mb-4">Generate Report For</h2>
+            <div className="space-y-2">
+              {MANUAL_PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => handleManualReport(p.value)}
+                  className="w-full p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors text-left text-white text-sm font-medium"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowManualPicker(false)}
+              className="w-full mt-4 py-3 text-gray-400 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="p-4 space-y-4 mt-2">
+        {/* Reports */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
+            Reports
+          </p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+            <button
+              onClick={() => setShowSchedulePicker(true)}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar size={18} className="text-gray-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Auto Report Schedule</p>
+                  <p className="text-gray-500 text-xs">{selectedSchedule?.desc}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400 text-sm">{selectedSchedule?.label}</span>
+                <ChevronRight size={16} className="text-gray-600" />
+              </div>
+            </button>
+
+            <button
+              onClick={() => setShowManualPicker(true)}
+              disabled={isExporting}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 disabled:opacity-50"
+            >
+              <div className="flex items-center gap-3">
+                <FileText size={18} className="text-gray-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Generate Report</p>
+                  <p className="text-gray-500 text-xs">
+                    {isExporting ? 'Generating...' : 'Choose a time period'}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+
+            <button
+              onClick={handleExportAll}
+              disabled={isExporting}
+              className="w-full flex items-center justify-between p-4 disabled:opacity-50"
+            >
+              <div className="flex items-center gap-3">
+                <Download size={18} className="text-gray-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Export All Data</p>
+                  <p className="text-gray-500 text-xs">Full transaction history as PDF</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+          {exportMsg && (
+            <p className={`text-xs mt-2 px-1 ${exportMsg.includes('fail') || exportMsg.includes('No') ? 'text-red-400' : 'text-emerald-400'}`}>
+              {exportMsg}
+            </p>
+          )}
+        </div>
+
+        {/* Data Management */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
             Data Management
           </p>
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
             <button
               onClick={() => setShowCurrencyPicker(true)}
-              className="w-full flex items-center justify-between p-4 border-b border-gray-800"
+              className="w-full flex items-center justify-between p-4"
             >
               <div className="flex items-center gap-3">
                 <Database size={18} className="text-gray-400" />
@@ -100,31 +280,10 @@ const Settings = () => {
                 <ChevronRight size={16} className="text-gray-600" />
               </div>
             </button>
-
-            <button
-              onClick={handleExport}
-              disabled={isExporting}
-              className="w-full flex items-center justify-between p-4 disabled:opacity-50"
-            >
-              <div className="flex items-center gap-3">
-                <Download size={18} className="text-gray-400" />
-                <div className="text-left">
-                  <p className="text-white text-sm">Export Report</p>
-                  <p className="text-gray-500 text-xs">
-                    {isExporting ? 'Generating PDF...' : 'Download as PDF'}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={16} className="text-gray-600" />
-            </button>
           </div>
-          {exportMsg && (
-            <p className={`text-xs mt-2 px-1 ${exportMsg.includes('fail') ? 'text-red-400' : 'text-emerald-400'}`}>
-              {exportMsg}
-            </p>
-          )}
         </div>
 
+        {/* Privacy */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
             Privacy
@@ -147,6 +306,7 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* About */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
             About
