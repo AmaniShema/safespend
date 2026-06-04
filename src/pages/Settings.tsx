@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Check,
   ChevronRight,
@@ -19,7 +20,6 @@ import {
   generateManualReport,
   type ReportSchedule,
 } from '../utils/reportScheduler';
-import { useEffect } from 'react';
 
 const SCHEDULE_OPTIONS: { value: ReportSchedule; label: string; desc: string }[] = [
   { value: 'monthly', label: 'Monthly', desc: 'Auto-generate at start of each month' },
@@ -34,6 +34,7 @@ const MANUAL_PERIODS: { value: 'this_month' | 'last_month' | 'this_week'; label:
 ];
 
 const Settings = () => {
+  const navigate = useNavigate();
   const { currency, setCurrency } = useCurrency();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
@@ -257,6 +258,23 @@ const Settings = () => {
               {exportMsg}
             </p>
           )}
+        </div>
+
+        {/* Budgets */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Budgets</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/budgets")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">💰</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Budget Limits</p>
+                  <p className="text-gray-500 text-xs">Set spending limits per category</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
         </div>
 
         {/* Data Management */}

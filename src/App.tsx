@@ -4,6 +4,7 @@ import AddTransaction from './pages/AddTransaction';
 import Analytics from './pages/Analytics';
 import Search from './pages/Search';
 import Settings from './pages/Settings';
+import Budgets from './pages/Budgets';
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/search" element={<Search />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/budgets" element={<Budgets />} />
       </Routes>
     </BrowserRouter>
   );
