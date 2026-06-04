@@ -16,13 +16,20 @@ const saveLocalBudgets = (budgets: Budget[]): void => {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(budgets));
 };
 
+// Maps SQLite row (limit_amount) to Budget interface (limit)
+const mapRow = (row: Record<string, unknown>): Budget => ({
+  id: row.id as string,
+  category: row.category as string,
+  limit: (row.limit_amount ?? row.limit) as number,
+  spent: row.spent as number,
+  period: row.period as 'weekly' | 'monthly',
+});
+
 export const getAllBudgets = async (): Promise<Budget[]> => {
   if (!isNative()) return getLocalBudgets();
   const db = getDatabase();
-  const result = await db.query(
-    'SELECT * FROM budgets'
-  );
-  return (result.values as Budget[]) || [];
+  const result = await db.query('SELECT * FROM budgets');
+  return (result.values as Record<string, unknown>[])?.map(mapRow) || [];
 };
 
 export const upsertBudget = async (

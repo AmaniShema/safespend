@@ -8,17 +8,6 @@ interface BudgetCardProps {
   onDelete?: (id: string) => void;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  food: '#f97316',
-  transport: '#3b82f6',
-  shopping: '#a855f7',
-  rent: '#eab308',
-  travel: '#06b6d4',
-  health: '#ef4444',
-  entertainment: '#ec4899',
-  salary: '#10b981',
-  other: '#6b7280',
-};
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   food: '🍽️',
@@ -37,7 +26,6 @@ const BudgetCard = ({ budget, currency, onDelete }: BudgetCardProps) => {
   const isOver = budget.spent >= budget.limit;
   const isWarning = percent >= 75 && !isOver;
   const remaining = budget.limit - budget.spent;
-  const color = CATEGORY_COLORS[budget.category] || '#6b7280';
 
   const barColor = isOver
     ? '#ef4444'
