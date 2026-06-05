@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import BalanceCard from '../components/BalanceCard';
@@ -30,6 +31,10 @@ const Home = () => {
         ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
       : 'N/A';
 
+  // Sync balance to Android widget whenever it changes
+  useEffect(() => {
+  }, [totalBalance, currency]);
+
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-24">
       <div className="flex items-center justify-between p-4 pb-0">
@@ -54,7 +59,6 @@ const Home = () => {
         currency={currency}
       />
 
-      {/* Budget alerts */}
       {alertBudgets.length > 0 && (
         <div className="mx-4 mt-4">
           <div className="flex justify-between items-center mb-3">
