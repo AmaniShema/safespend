@@ -5,6 +5,7 @@ import {
   createAccount,
   deleteAccount,
   initDefaultAccount,
+  setDefaultAccount,
 } from '../db/accounts';
 
 interface UseAccountsReturn {
@@ -12,6 +13,7 @@ interface UseAccountsReturn {
   isLoading: boolean;
   addAccount: (data: Omit<Account, 'id' | 'createdAt'>) => Promise<void>;
   removeAccount: (id: string) => Promise<void>;
+  makeDefault: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -46,5 +48,10 @@ export const useAccounts = (): UseAccountsReturn => {
     await refresh();
   };
 
-  return { accounts, isLoading, addAccount, removeAccount, refresh };
+  const makeDefault = async (id: string): Promise<void> => {
+    await setDefaultAccount(id);
+    await refresh();
+  };
+
+  return { accounts, isLoading, addAccount, removeAccount, makeDefault, refresh };
 };

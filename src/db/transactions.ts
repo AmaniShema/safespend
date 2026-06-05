@@ -20,6 +20,7 @@ export const addTransaction = async (
 ): Promise<Transaction> => {
   const transaction: Transaction = {
     ...data,
+    accountId: data.accountId || 'default',
     id: generateId(),
     createdAt: new Date().toISOString(),
   };
@@ -32,8 +33,9 @@ export const addTransaction = async (
 
   const db = getDatabase();
   await db.run(
-    `INSERT INTO transactions (id, amount, type, category, note, date, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO transactions
+     (id, amount, type, category, note, date, createdAt, accountId)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       transaction.id,
       transaction.amount,
@@ -42,20 +44,28 @@ export const addTransaction = async (
       transaction.note,
       transaction.date,
       transaction.createdAt,
+      transaction.accountId,
     ]
   );
   return transaction;
 };
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
-  if (!isNative()) {
-    return getLocalTransactions();
-  }
+  if (!isNative()) return getLocalTransactions();
   const db = getDatabase();
   const result = await db.query(
     'SELECT * FROM transactions ORDER BY date DESC'
   );
-  return (result.values as Transaction[]) || [];
+  return (result.values || []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    amount: row.amount as number,
+    type: row.type as 'income' | 'expense',
+    category: row.category as string,
+    note: row.note as string,
+    date: row.date as string,
+    createdAt: row.createdAt as string,
+    accountId: (row.accountId as string) || 'default',
+  }));
 };
 
 export const deleteTransaction = async (id: string): Promise<void> => {

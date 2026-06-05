@@ -15,54 +15,43 @@ const saveLocalAccounts = (accounts: Account[]): void => {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(accounts));
 };
 
-const DEFAULT_ACCOUNT: Omit<Account, 'id' | 'createdAt'> = {
-  name: 'Default',
+const DEFAULT_ACCOUNT: Account = {
+  id: 'default',
+  name: 'Cash',
   type: 'cash',
   currency: 'RWF',
   color: '#10b981',
   isDefault: true,
+  createdAt: new Date().toISOString(),
 };
 
 export const initDefaultAccount = async (): Promise<Account> => {
   const existing = await getAllAccounts();
   if (existing.length > 0) return existing.find((a) => a.isDefault) || existing[0];
 
-  const account: Account = {
-    ...DEFAULT_ACCOUNT,
-    id: 'default',
-    createdAt: new Date().toISOString(),
-  };
-
   if (!isNative()) {
-    saveLocalAccounts([account]);
-    return account;
+    saveLocalAccounts([DEFAULT_ACCOUNT]);
+    return DEFAULT_ACCOUNT;
   }
 
   const db = getDatabase();
   await db.run(
-    `CREATE TABLE IF NOT EXISTS accounts (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      type TEXT NOT NULL,
-      currency TEXT NOT NULL,
-      color TEXT NOT NULL,
-      isDefault INTEGER NOT NULL DEFAULT 0,
-      createdAt TEXT NOT NULL
-    )`
-  );
-  await db.run(
-    `INSERT OR IGNORE INTO accounts (id, name, type, currency, color, isDefault, createdAt)
+    `INSERT OR IGNORE INTO accounts
+     (id, name, type, currency, color, isDefault, createdAt)
      VALUES (?, ?, ?, ?, ?, 1, ?)`,
-    [account.id, account.name, account.type, account.currency, account.color, account.createdAt]
+    [DEFAULT_ACCOUNT.id, DEFAULT_ACCOUNT.name, DEFAULT_ACCOUNT.type,
+     DEFAULT_ACCOUNT.currency, DEFAULT_ACCOUNT.color, DEFAULT_ACCOUNT.createdAt]
   );
-  return account;
+  return DEFAULT_ACCOUNT;
 };
 
 export const getAllAccounts = async (): Promise<Account[]> => {
   if (!isNative()) return getLocalAccounts();
   const db = getDatabase();
   try {
-    const result = await db.query('SELECT * FROM accounts ORDER BY isDefault DESC');
+    const result = await db.query(
+      'SELECT * FROM accounts ORDER BY isDefault DESC, createdAt ASC'
+    );
     return (result.values || []).map((row: Record<string, unknown>) => ({
       id: row.id as string,
       name: row.name as string,
@@ -73,7 +62,7 @@ export const getAllAccounts = async (): Promise<Account[]> => {
       createdAt: row.createdAt as string,
     }));
   } catch {
-    return [];
+    return [DEFAULT_ACCOUNT];
   }
 };
 
@@ -112,14 +101,27 @@ export const createAccount = async (
   return account;
 };
 
+export const setDefaultAccount = async (id: string): Promise<void> => {
+  if (!isNative()) {
+    const existing = getLocalAccounts();
+    saveLocalAccounts(
+      existing.map((a) => ({ ...a, isDefault: a.id === id }))
+    );
+    return;
+  }
+  const db = getDatabase();
+  await db.run('UPDATE accounts SET isDefault = 0');
+  await db.run('UPDATE accounts SET isDefault = 1 WHERE id = ?', [id]);
+};
+
 export const deleteAccount = async (id: string): Promise<void> => {
-  if (id === 'default') return; // protect default account
+  if (id === 'default') return;
   if (!isNative()) {
     saveLocalAccounts(getLocalAccounts().filter((a) => a.id !== id));
     return;
   }
   const db = getDatabase();
-  await db.run('DELETE FROM accounts WHERE id = ? AND id != "default"', [id]);
+  await db.run('DELETE FROM accounts WHERE id != "default" AND id = ?', [id]);
 };
 
 export const getDefaultAccountId = async (): Promise<string> => {

@@ -15,7 +15,8 @@ const CREATE_TABLES = `
     category TEXT NOT NULL,
     note TEXT NOT NULL,
     date TEXT NOT NULL,
-    createdAt TEXT NOT NULL
+    createdAt TEXT NOT NULL,
+    accountId TEXT NOT NULL DEFAULT 'default'
   );
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY NOT NULL,
@@ -28,6 +29,19 @@ const CREATE_TABLES = `
     spent REAL NOT NULL DEFAULT 0,
     period TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS accounts (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    color TEXT NOT NULL,
+    isDefault INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL
+  );
+`;
+
+const MIGRATIONS = `
+  ALTER TABLE transactions ADD COLUMN accountId TEXT NOT NULL DEFAULT 'default';
 `;
 
 export const initDatabase = async (): Promise<void> => {
@@ -53,6 +67,14 @@ export const initDatabase = async (): Promise<void> => {
 
     await db.open();
     await db.execute(CREATE_TABLES);
+
+    // Run migrations safely
+    try {
+      await db.execute(MIGRATIONS);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+
     console.log('SQLite database initialized');
   } catch (error) {
     console.error('Database initialization failed:', error);
@@ -61,9 +83,7 @@ export const initDatabase = async (): Promise<void> => {
 };
 
 export const getDatabase = (): SQLiteDBConnection => {
-  if (!db) {
-    throw new Error('Database not initialized.');
-  }
+  if (!db) throw new Error('Database not initialized.');
   return db;
 };
 
