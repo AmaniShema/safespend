@@ -13,6 +13,7 @@ import BottomNav from '../components/BottomNav';
 import { useCurrency } from '../hooks/useCurrency';
 import { CURRENCIES } from '../utils/currency';
 import { getAllTransactions } from '../db/transactions';
+import { isBiometricEnabled, setBiometricEnabled, isBiometricAvailable } from '../utils/biometric';
 import { exportToPdf } from '../utils/exportPdf';
 import {
   getReportSchedule,
@@ -42,9 +43,13 @@ const Settings = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [schedule, setSchedule] = useState<ReportSchedule>('monthly');
   const [showManualPicker, setShowManualPicker] = useState(false);
+  const [biometricEnabled, setBiometricState] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   useEffect(() => {
     getReportSchedule().then(setSchedule);
+    isBiometricEnabled().then(setBiometricState);
+    isBiometricAvailable().then(setBiometricAvailable);
   }, []);
 
   const handleCurrencySelect = async (code: string) => {
@@ -320,6 +325,36 @@ const Settings = () => {
                 <p className="text-gray-500 text-xs uppercase">Exposure</p>
                 <p className="text-emerald-400 text-sm font-bold mt-1">0% Cloud</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Security */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Security</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white text-sm font-medium">Biometric Lock</p>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  {biometricAvailable ? "Fingerprint / PIN protection" : "Not available on this device"}
+                </p>
+              </div>
+              <button
+                disabled={!biometricAvailable}
+                onClick={async () => {
+                  const next = !biometricEnabled;
+                  await setBiometricEnabled(next);
+                  setBiometricState(next);
+                }}
+                className={`w-12 h-6 rounded-full transition-colors relative ${
+                  biometricEnabled ? "bg-emerald-500" : "bg-gray-700"
+                } disabled:opacity-40`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                  biometricEnabled ? "translate-x-6" : "translate-x-0.5"
+                }`} />
+              </button>
             </div>
           </div>
         </div>
