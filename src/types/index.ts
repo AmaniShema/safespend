@@ -6,6 +6,17 @@ export interface Transaction {
   note: string;
   date: string;
   createdAt: string;
+  accountId: string;
+}
+
+export interface Account {
+  id: string;
+  name: string;
+  type: 'cash' | 'mobile' | 'bank' | 'savings' | 'other';
+  currency: string;
+  color: string;
+  isDefault: boolean;
+  createdAt: string;
 }
 
 export interface Budget {

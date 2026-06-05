@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Check, Clock } from 'lucide-react';
+import { X, Check, Clock, ChevronDown } from 'lucide-react';
 import type { TransactionCategory } from '../types';
 import { addTransaction } from '../db/transactions';
 import { getLastPurchase, TRACKED_CATEGORIES } from '../db/tracker';
+import { getAllAccounts, getDefaultAccountId } from '../db/accounts';
+import type { Account } from '../types';
 
 const categories: { value: TransactionCategory; label: string; emoji: string }[] = [
   { value: 'food', label: 'Food', emoji: '🍽️' },
@@ -33,8 +35,20 @@ const AddTransaction = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [lastPurchaseHint, setLastPurchaseHint] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
 
-  // Check last purchase when note or category changes
+  useEffect(() => {
+    const loadAccounts = async () => {
+      const all = await getAllAccounts();
+      setAccounts(all);
+      const defaultId = await getDefaultAccountId();
+      setSelectedAccountId(defaultId);
+    };
+    loadAccounts();
+  }, []);
+
   useEffect(() => {
     const check = async () => {
       if (
@@ -45,25 +59,21 @@ const AddTransaction = () => {
         setLastPurchaseHint(null);
         return;
       }
-
       const last = await getLastPurchase(note, category);
       if (last) {
         const days = daysBetween(last.date);
-        if (days === 0) {
-          setLastPurchaseHint('You bought this today');
-        } else if (days === 1) {
-          setLastPurchaseHint('You last bought this yesterday');
-        } else {
-          setLastPurchaseHint(`You last bought this ${days} days ago`);
-        }
+        if (days === 0) setLastPurchaseHint('You bought this today');
+        else if (days === 1) setLastPurchaseHint('You last bought this yesterday');
+        else setLastPurchaseHint(`You last bought this ${days} days ago`);
       } else {
         setLastPurchaseHint(null);
       }
     };
-
     const timeout = setTimeout(check, 400);
     return () => clearTimeout(timeout);
   }, [note, category, type]);
+
+  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
   const handleSave = async (): Promise<void> => {
     const parsed = parseFloat(amount);
@@ -71,10 +81,8 @@ const AddTransaction = () => {
       setError('Please enter a valid amount');
       return;
     }
-
     setIsSaving(true);
     setError('');
-
     try {
       await addTransaction({
         amount: parsed,
@@ -82,6 +90,7 @@ const AddTransaction = () => {
         category,
         note: note.trim() || category,
         date: new Date(date).toISOString(),
+        accountId: selectedAccountId,
       });
       navigate('/');
     } catch {
@@ -92,7 +101,6 @@ const AddTransaction = () => {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <button onClick={() => navigate('/')} className="text-gray-400">
           <X size={24} />
@@ -101,15 +109,54 @@ const AddTransaction = () => {
         <div className="w-6" />
       </div>
 
+      {/* Account picker modal */}
+      {showAccountPicker && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
+          <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800">
+            <h2 className="text-white font-semibold mb-4">Select Account</h2>
+            <div className="space-y-2">
+              {accounts.map((acc) => (
+                <button
+                  key={acc.id}
+                  onClick={() => {
+                    setSelectedAccountId(acc.id);
+                    setShowAccountPicker(false);
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-800 hover:bg-gray-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: acc.color }}
+                    />
+                    <span className="text-white text-sm">{acc.name}</span>
+                    {acc.isDefault && (
+                      <span className="text-yellow-400 text-xs">Default</span>
+                    )}
+                  </div>
+                  {selectedAccountId === acc.id && (
+                    <Check size={16} className="text-emerald-400" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowAccountPicker(false)}
+              className="w-full mt-4 py-3 text-gray-400 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Type toggle */}
         <div className="flex bg-gray-900 rounded-xl p-1 border border-gray-800">
           <button
             onClick={() => setType('expense')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              type === 'expense'
-                ? 'bg-red-500/20 text-red-400'
-                : 'text-gray-500'
+              type === 'expense' ? 'bg-red-500/20 text-red-400' : 'text-gray-500'
             }`}
           >
             Expense
@@ -117,9 +164,7 @@ const AddTransaction = () => {
           <button
             onClick={() => setType('income')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              type === 'income'
-                ? 'bg-emerald-500/20 text-emerald-400'
-                : 'text-gray-500'
+              type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500'
             }`}
           >
             Income
@@ -141,6 +186,28 @@ const AddTransaction = () => {
           </div>
           {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
         </div>
+
+        {/* Account selector */}
+        {accounts.length > 1 && (
+          <div>
+            <p className="text-gray-400 text-sm mb-2">Account</p>
+            <button
+              onClick={() => setShowAccountPicker(true)}
+              className="w-full flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl p-3"
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: selectedAccount?.color || '#10b981' }}
+                />
+                <span className="text-white text-sm">
+                  {selectedAccount?.name || 'Default'}
+                </span>
+              </div>
+              <ChevronDown size={16} className="text-gray-500" />
+            </button>
+          </div>
+        )}
 
         {/* Category */}
         <div>
@@ -173,19 +240,15 @@ const AddTransaction = () => {
             placeholder="e.g. Cooking gas, Electricity bill..."
             className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-emerald-500 transition-colors placeholder-gray-700"
           />
-
-          {/* Last purchase hint */}
           {lastPurchaseHint && (
             <div className="flex items-center gap-2 mt-2 px-1">
               <Clock size={12} className="text-yellow-400 flex-shrink-0" />
               <p className="text-yellow-400 text-xs">{lastPurchaseHint}</p>
             </div>
           )}
-
-          {/* Tracker notice */}
           {TRACKED_CATEGORIES.includes(category) && type === 'expense' && (
             <p className="text-gray-600 text-xs mt-1.5 px-1">
-              💡 Cycle tracking is active for this category
+              💡 Cycle tracking active for this category
             </p>
           )}
         </div>
@@ -202,7 +265,6 @@ const AddTransaction = () => {
         </div>
       </div>
 
-      {/* Save button */}
       <div className="p-4 border-t border-gray-800">
         <button
           onClick={handleSave}

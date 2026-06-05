@@ -13,6 +13,7 @@ import BottomNav from '../components/BottomNav';
 import { useCurrency } from '../hooks/useCurrency';
 import { CURRENCIES } from '../utils/currency';
 import { getAllTransactions } from '../db/transactions';
+import { getAllAccounts } from '../db/accounts';
 import { isBiometricEnabled, setBiometricEnabled, isBiometricAvailable } from '../utils/biometric';
 import { exportToPdf } from '../utils/exportPdf';
 import {
@@ -72,7 +73,8 @@ const Settings = () => {
         setExportMsg('No transactions to export');
         return;
       }
-      await exportToPdf(transactions, currency);
+      const accounts = await getAllAccounts();
+      await exportToPdf(transactions, currency, accounts);
       setExportMsg('Export successful!');
     } catch {
       setExportMsg('Export failed. Try again.');
@@ -263,6 +265,23 @@ const Settings = () => {
               {exportMsg}
             </p>
           )}
+        </div>
+
+        {/* Accounts */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Accounts</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/accounts")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🏦</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Manage Accounts</p>
+                  <p className="text-gray-500 text-xs">Cash, mobile money, bank</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
         </div>
 
         {/* Budgets */}

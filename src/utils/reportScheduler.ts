@@ -2,6 +2,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { getSetting, setSetting } from '../db/settings';
 import { getTransactionsByMonth } from '../db/transactions';
+import { getAllAccounts } from '../db/accounts';
 import { exportToPdf } from './exportPdf';
 
 export type ReportSchedule = 'monthly' | 'weekly' | 'off';
@@ -104,7 +105,8 @@ export const checkAndGenerateReport = async (
 
     if (transactions.length === 0) return false;
 
-    await exportToPdf(transactions, currency);
+    const accounts = await getAllAccounts();
+    await exportToPdf(transactions, currency, accounts);
     await setSetting(LAST_REPORT_KEY, now.toISOString());
 
     const label = schedule === 'monthly' ? 'Monthly' : 'Weekly';
@@ -150,6 +152,7 @@ export const generateManualReport = async (
     throw new Error('No transactions found for this period');
   }
 
-  await exportToPdf(transactions, currency);
+  const accounts = await getAllAccounts();
+    await exportToPdf(transactions, currency, accounts);
   await setSetting(LAST_REPORT_KEY, now.toISOString());
 };

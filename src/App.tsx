@@ -7,6 +7,7 @@ import Analytics from './pages/Analytics';
 import Search from './pages/Search';
 import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
+import Accounts from './pages/Accounts';
 import LockScreen from './components/LockScreen';
 import { isBiometricEnabled, isBiometricAvailable } from './utils/biometric';
 
@@ -56,6 +57,7 @@ const App = () => {
         <Route path="/search" element={<Search />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/budgets" element={<Budgets />} />
+        <Route path="/accounts" element={<Accounts />} />
       </Routes>
     </BrowserRouter>
   );
