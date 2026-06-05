@@ -22,7 +22,7 @@ const COLORS = [
 
 const Accounts = () => {
   const navigate = useNavigate();
-  const { accounts, addAccount, removeAccount } = useAccounts();
+  const { accounts, addAccount, removeAccount, makeDefault } = useAccounts();
   const { transactions } = useTransactions();
   const { currency } = useCurrency();
   const [showForm, setShowForm] = useState(false);
@@ -35,30 +35,18 @@ const Accounts = () => {
   const getAccountBalance = (accountId: string): number => {
     return transactions
       .filter((t) => t.accountId === accountId)
-      .reduce((sum, t) => {
-        return t.type === 'income' ? sum + t.amount : sum - t.amount;
-      }, 0);
+      .reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount, 0);
   };
 
-  const totalBalance = transactions.reduce((sum, t) => {
-    return t.type === 'income' ? sum + t.amount : sum - t.amount;
-  }, 0);
+  const totalBalance = transactions.reduce((sum, t) =>
+    t.type === 'income' ? sum + t.amount : sum - t.amount, 0);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      setError('Enter an account name');
-      return;
-    }
+    if (!name.trim()) { setError('Enter an account name'); return; }
     setIsSaving(true);
     setError('');
     try {
-      await addAccount({
-        name: name.trim(),
-        type,
-        currency,
-        color,
-        isDefault: false,
-      });
+      await addAccount({ name: name.trim(), type, currency, color, isDefault: false });
       setShowForm(false);
       setName('');
       setType('cash');
@@ -82,7 +70,6 @@ const Accounts = () => {
         </button>
       </div>
 
-      {/* Add account form */}
       {showForm && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
           <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800">
@@ -93,7 +80,6 @@ const Accounts = () => {
               </button>
             </div>
 
-            {/* Name */}
             <p className="text-gray-400 text-sm mb-2">Account Name</p>
             <input
               type="text"
@@ -104,7 +90,6 @@ const Accounts = () => {
               autoFocus
             />
 
-            {/* Type */}
             <p className="text-gray-400 text-sm mb-2">Type</p>
             <div className="grid grid-cols-5 gap-2 mb-4">
               {ACCOUNT_TYPES.map((t) => (
@@ -123,7 +108,6 @@ const Accounts = () => {
               ))}
             </div>
 
-            {/* Color */}
             <p className="text-gray-400 text-sm mb-2">Color</p>
             <div className="flex gap-2 mb-4">
               {COLORS.map((c) => (
@@ -152,16 +136,20 @@ const Accounts = () => {
       )}
 
       <div className="p-4">
-        {/* Total balance */}
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 mb-4">
           <p className="text-gray-400 text-sm">Total Balance (All Accounts)</p>
           <p className={`text-3xl font-bold mt-1 ${totalBalance < 0 ? 'text-red-400' : 'text-white'}`}>
             {totalBalance >= 0 ? '+' : ''}{totalBalance.toLocaleString()} {currency}
           </p>
-          <p className="text-gray-500 text-xs mt-1">{accounts.length} account{accounts.length !== 1 ? 's' : ''}</p>
+          <p className="text-gray-500 text-xs mt-1">
+            {accounts.length} account{accounts.length !== 1 ? 's' : ''}
+          </p>
         </div>
 
-        {/* Account list */}
+        <p className="text-gray-500 text-xs px-1 mb-3">
+          ⭐ Tap "Set Default" to make any account the default for new transactions
+        </p>
+
         <div className="space-y-3">
           {accounts.map((account) => (
             <AccountCard
@@ -169,13 +157,10 @@ const Accounts = () => {
               account={account}
               balance={getAccountBalance(account.id)}
               onDelete={removeAccount}
+              onSetDefault={makeDefault}
             />
           ))}
         </div>
-
-        <p className="text-gray-600 text-xs text-center mt-6">
-          ⭐ Default account receives all transactions without a specific account
-        </p>
       </div>
     </div>
   );
