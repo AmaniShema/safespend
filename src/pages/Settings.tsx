@@ -14,6 +14,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { CURRENCIES } from '../utils/currency';
 import { getAllTransactions } from '../db/transactions';
 import { getAllAccounts } from '../db/accounts';
+import { getAllCategories } from '../db/categories';
 import { isBiometricEnabled, setBiometricEnabled, isBiometricAvailable } from '../utils/biometric';
 import { exportToPdf } from '../utils/exportPdf';
 import {
@@ -74,7 +75,8 @@ const Settings = () => {
         return;
       }
       const accounts = await getAllAccounts();
-      await exportToPdf(transactions, currency, accounts);
+      const cats = await getAllCategories();
+      await exportToPdf(transactions, currency, accounts, cats);
       setExportMsg('Export successful!');
     } catch {
       setExportMsg('Export failed. Try again.');
@@ -265,6 +267,23 @@ const Settings = () => {
               {exportMsg}
             </p>
           )}
+        </div>
+
+        {/* Categories */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Categories</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/categories")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🏷️</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Manage Categories</p>
+                  <p className="text-gray-500 text-xs">Create custom spending categories</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
         </div>
 
         {/* Accounts */}

@@ -1,23 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Check, Clock, ChevronDown } from 'lucide-react';
-import type { TransactionCategory } from '../types';
 import { addTransaction } from '../db/transactions';
 import { getLastPurchase, TRACKED_CATEGORIES } from '../db/tracker';
 import { getAllAccounts, getDefaultAccountId } from '../db/accounts';
-import type { Account } from '../types';
-
-const categories: { value: TransactionCategory; label: string; emoji: string }[] = [
-  { value: 'food', label: 'Food', emoji: '🍽️' },
-  { value: 'transport', label: 'Transport', emoji: '🚗' },
-  { value: 'shopping', label: 'Shopping', emoji: '🛍️' },
-  { value: 'rent', label: 'Rent', emoji: '🏠' },
-  { value: 'travel', label: 'Travel', emoji: '✈️' },
-  { value: 'health', label: 'Health', emoji: '❤️' },
-  { value: 'entertainment', label: 'Fun', emoji: '🎬' },
-  { value: 'salary', label: 'Salary', emoji: '💰' },
-  { value: 'other', label: 'Other', emoji: '···' },
-];
+import { getAllCategories } from '../db/categories';
+import type { Account, Category } from '../types';
 
 const daysBetween = (dateStr: string): number => {
   const past = new Date(dateStr).getTime();
@@ -29,37 +17,42 @@ const AddTransaction = () => {
   const navigate = useNavigate();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState<TransactionCategory>('food');
+  const [selectedCategory, setSelectedCategory] = useState<string>('food');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [lastPurchaseHint, setLastPurchaseHint] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [showAccountPicker, setShowAccountPicker] = useState(false);
 
   useEffect(() => {
-    const loadAccounts = async () => {
-      const all = await getAllAccounts();
-      setAccounts(all);
+    const load = async () => {
+      const [allAccounts, allCategories] = await Promise.all([
+        getAllAccounts(),
+        getAllCategories(),
+      ]);
+      setAccounts(allAccounts);
+      setCategories(allCategories);
       const defaultId = await getDefaultAccountId();
       setSelectedAccountId(defaultId);
     };
-    loadAccounts();
+    load();
   }, []);
 
   useEffect(() => {
     const check = async () => {
       if (
         note.trim().length < 2 ||
-        !TRACKED_CATEGORIES.includes(category) ||
+        !TRACKED_CATEGORIES.includes(selectedCategory) ||
         type !== 'expense'
       ) {
         setLastPurchaseHint(null);
         return;
       }
-      const last = await getLastPurchase(note, category);
+      const last = await getLastPurchase(note, selectedCategory);
       if (last) {
         const days = daysBetween(last.date);
         if (days === 0) setLastPurchaseHint('You bought this today');
@@ -71,9 +64,12 @@ const AddTransaction = () => {
     };
     const timeout = setTimeout(check, 400);
     return () => clearTimeout(timeout);
-  }, [note, category, type]);
+  }, [note, selectedCategory, type]);
 
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const displayCategories = type === 'expense'
+    ? categories.filter((c) => c.id !== 'salary')
+    : categories;
 
   const handleSave = async (): Promise<void> => {
     const parsed = parseFloat(amount);
@@ -87,8 +83,8 @@ const AddTransaction = () => {
       await addTransaction({
         amount: parsed,
         type,
-        category,
-        note: note.trim() || category,
+        category: selectedCategory,
+        note: note.trim() || selectedCategory,
         date: new Date(date).toISOString(),
         accountId: selectedAccountId,
       });
@@ -109,7 +105,6 @@ const AddTransaction = () => {
         <div className="w-6" />
       </div>
 
-      {/* Account picker modal */}
       {showAccountPicker && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
           <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800">
@@ -118,32 +113,19 @@ const AddTransaction = () => {
               {accounts.map((acc) => (
                 <button
                   key={acc.id}
-                  onClick={() => {
-                    setSelectedAccountId(acc.id);
-                    setShowAccountPicker(false);
-                  }}
+                  onClick={() => { setSelectedAccountId(acc.id); setShowAccountPicker(false); }}
                   className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-800 hover:bg-gray-700"
                 >
                   <div className="flex items-center gap-3">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: acc.color }}
-                    />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: acc.color }} />
                     <span className="text-white text-sm">{acc.name}</span>
-                    {acc.isDefault && (
-                      <span className="text-yellow-400 text-xs">Default</span>
-                    )}
+                    {acc.isDefault && <span className="text-yellow-400 text-xs">Default</span>}
                   </div>
-                  {selectedAccountId === acc.id && (
-                    <Check size={16} className="text-emerald-400" />
-                  )}
+                  {selectedAccountId === acc.id && <Check size={16} className="text-emerald-400" />}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowAccountPicker(false)}
-              className="w-full mt-4 py-3 text-gray-400 text-sm"
-            >
+            <button onClick={() => setShowAccountPicker(false)} className="w-full mt-4 py-3 text-gray-400 text-sm">
               Cancel
             </button>
           </div>
@@ -196,13 +178,8 @@ const AddTransaction = () => {
               className="w-full flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl p-3"
             >
               <div className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: selectedAccount?.color || '#10b981' }}
-                />
-                <span className="text-white text-sm">
-                  {selectedAccount?.name || 'Default'}
-                </span>
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: selectedAccount?.color || '#10b981' }} />
+                <span className="text-white text-sm">{selectedAccount?.name || 'Default'}</span>
               </div>
               <ChevronDown size={16} className="text-gray-500" />
             </button>
@@ -213,18 +190,23 @@ const AddTransaction = () => {
         <div>
           <p className="text-gray-400 text-sm mb-3">Category</p>
           <div className="grid grid-cols-3 gap-2">
-            {categories.map((cat) => (
+            {displayCategories.map((cat) => (
               <button
-                key={cat.value}
-                onClick={() => setCategory(cat.value)}
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors ${
-                  category === cat.value
+                  selectedCategory === cat.id
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
                     : 'border-gray-800 bg-gray-900 text-gray-400'
                 }`}
               >
                 <span className="text-xl">{cat.emoji}</span>
-                <span className="text-xs font-medium">{cat.label}</span>
+                <span className="text-xs font-medium text-center leading-tight">
+                  {cat.name.length > 10 ? cat.name.substring(0, 9) + '…' : cat.name}
+                </span>
+                {cat.isDaily && (
+                  <span className="text-indigo-400 text-xs leading-none">random</span>
+                )}
               </button>
             ))}
           </div>
@@ -246,7 +228,7 @@ const AddTransaction = () => {
               <p className="text-yellow-400 text-xs">{lastPurchaseHint}</p>
             </div>
           )}
-          {TRACKED_CATEGORIES.includes(category) && type === 'expense' && (
+          {TRACKED_CATEGORIES.includes(selectedCategory) && type === 'expense' && (
             <p className="text-gray-600 text-xs mt-1.5 px-1">
               💡 Cycle tracking active for this category
             </p>

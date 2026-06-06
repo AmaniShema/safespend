@@ -2,8 +2,9 @@ import jsPDF from 'jspdf';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
-import type { Transaction, Account } from '../types';
+import type { Transaction, Account, Category } from '../types';
 import { formatCurrency } from './currency';
+import { getAllCategories } from '../db/categories';
 
 const CATEGORY_COLORS: Record<string, [number, number, number]> = {
   food: [249, 115, 22],
@@ -14,14 +15,23 @@ const CATEGORY_COLORS: Record<string, [number, number, number]> = {
   health: [239, 68, 68],
   entertainment: [236, 72, 153],
   salary: [16, 185, 129],
+  daily: [99, 102, 241],
   other: [107, 114, 128],
 };
 
 export const exportToPdf = async (
   transactions: Transaction[],
   currency: string,
-  accounts: Account[] = []
+  accounts: Account[] = [],
+  categories: Category[] = []
 ): Promise<void> => {
+
+  // Load categories if not provided
+  let allCategories = categories;
+  if (allCategories.length === 0) {
+    allCategories = await getAllCategories();
+  }
+
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -40,16 +50,20 @@ export const exportToPdf = async (
     return account?.name || 'Default';
   };
 
-  // Header background
+  const getCategoryInfo = (categoryId: string): { name: string; color: [number, number, number] } => {
+    const cat = allCategories.find((c) => c.id === categoryId);
+    const name = cat?.name || categoryId;
+    const color = CATEGORY_COLORS[categoryId] || [107, 114, 128];
+    return { name, color };
+  };
+
+  // Header
   doc.setFillColor(17, 24, 39);
   doc.rect(0, 0, pageWidth, 40, 'F');
-
-  // App title
   doc.setTextColor(16, 185, 129);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.text('SafeSpend', 14, 18);
-
   doc.setTextColor(156, 163, 175);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -61,28 +75,20 @@ export const exportToPdf = async (
     14, 35
   );
 
-  // Account summary if multi-account
   if (accounts.length > 1) {
-    doc.setTextColor(156, 163, 175);
     doc.setFontSize(9);
     doc.text(
       `Accounts: ${accounts.map((a) => a.name).join(', ')}`,
-      pageWidth - 14, 35,
-      { align: 'right' }
+      pageWidth - 14, 35, { align: 'right' }
     );
   }
 
   y = 55;
 
   // Summary cards
-  const totalIncome = transactions
-    .filter((t) => t.type === 'income')
-    .reduce((s, t) => s + t.amount, 0);
-  const totalExpenses = transactions
-    .filter((t) => t.type === 'expense')
-    .reduce((s, t) => s + t.amount, 0);
+  const totalIncome = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const totalExpenses = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const balance = totalIncome - totalExpenses;
-
   const cardW = (pageWidth - 28 - 8) / 3;
 
   doc.setFillColor(6, 78, 59);
@@ -121,20 +127,18 @@ export const exportToPdf = async (
 
   y += 32;
 
-  // Per-account summary if multi-account
+  // Per-account summary
   if (accounts.length > 1) {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Account Summary', 14, y);
     y += 7;
-
     accounts.forEach((account) => {
       checkNewPage(10);
       const accTx = transactions.filter((t) => t.accountId === account.id);
       const accBalance = accTx.reduce((sum, t) =>
         t.type === 'income' ? sum + t.amount : sum - t.amount, 0);
-
       doc.setFillColor(31, 41, 55);
       doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
       doc.setTextColor(209, 213, 219);
@@ -157,7 +161,6 @@ export const exportToPdf = async (
   doc.text('Transactions', 14, y);
   y += 8;
 
-  // Table header
   doc.setFillColor(31, 41, 55);
   doc.rect(14, y, pageWidth - 28, 8, 'F');
   doc.setTextColor(156, 163, 175);
@@ -166,14 +169,13 @@ export const exportToPdf = async (
   doc.text('DATE', 17, y + 5.5);
   doc.text('NOTE', 45, y + 5.5);
   doc.text('CATEGORY', 95, y + 5.5);
-  doc.text('ACCOUNT', 130, y + 5.5);
+  doc.text('ACCOUNT', 133, y + 5.5);
   doc.text('AMOUNT', pageWidth - 17, y + 5.5, { align: 'right' });
   y += 10;
 
   doc.setFont('helvetica', 'normal');
   transactions.forEach((t, i) => {
     checkNewPage(9);
-
     if (i % 2 === 0) {
       doc.setFillColor(243, 244, 246);
       doc.rect(14, y - 1, pageWidth - 28, 8, 'F');
@@ -187,24 +189,25 @@ export const exportToPdf = async (
     doc.setFontSize(7.5);
     doc.text(date, 17, y + 4.5);
 
-    const note = t.note.length > 22 ? t.note.substring(0, 20) + '..' : t.note;
+    const note = t.note.length > 20 ? t.note.substring(0, 18) + '..' : t.note;
     doc.text(note, 45, y + 4.5);
 
-    // Category badge
-    const color = CATEGORY_COLORS[t.category] || [107, 114, 128];
+    // Category badge with proper name lookup
+    const { name: catName, color } = getCategoryInfo(t.category);
+    const badgeLabel = catName.length > 9 ? catName.substring(0, 8) + '.' : catName.toUpperCase();
     doc.setFillColor(color[0], color[1], color[2]);
-    doc.roundedRect(93, y + 0.5, 28, 6, 1.5, 1.5, 'F');
+    doc.roundedRect(93, y + 0.5, 32, 6, 1.5, 1.5, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(6.5);
-    doc.text(t.category.toUpperCase(), 107, y + 4.5, { align: 'center' });
+    doc.setFontSize(6);
+    doc.text(badgeLabel, 109, y + 4.5, { align: 'center' });
 
-    // Account name
+    // Account
     doc.setTextColor(100, 116, 139);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     const accName = getAccountName(t.accountId);
-    const accShort = accName.length > 12 ? accName.substring(0, 11) + '.' : accName;
-    doc.text(accShort, 130, y + 4.5);
+    const accShort = accName.length > 11 ? accName.substring(0, 10) + '.' : accName;
+    doc.text(accShort, 133, y + 4.5);
 
     // Amount
     doc.setFontSize(7.5);
@@ -214,11 +217,9 @@ export const exportToPdf = async (
       t.type === 'income' ? 185 : 38,
       t.type === 'income' ? 129 : 38
     );
-    const prefix = t.type === 'income' ? '+' : '-';
     doc.text(
-      `${prefix}${formatCurrency(t.amount, currency)}`,
-      pageWidth - 17, y + 4.5,
-      { align: 'right' }
+      `${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount, currency)}`,
+      pageWidth - 17, y + 4.5, { align: 'right' }
     );
     doc.setFont('helvetica', 'normal');
     y += 9;
@@ -241,20 +242,9 @@ export const exportToPdf = async (
 
   if (Capacitor.isNativePlatform()) {
     const base64 = doc.output('datauristring').split(',')[1];
-    await Filesystem.writeFile({
-      path: fileName,
-      data: base64,
-      directory: Directory.Cache,
-    });
-    const fileUri = await Filesystem.getUri({
-      path: fileName,
-      directory: Directory.Cache,
-    });
-    await Share.share({
-      title: 'SafeSpend Report',
-      url: fileUri.uri,
-      dialogTitle: 'Save or share your report',
-    });
+    await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache });
+    const fileUri = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
+    await Share.share({ title: 'SafeSpend Report', url: fileUri.uri, dialogTitle: 'Save or share your report' });
   } else {
     doc.save(fileName);
   }

@@ -8,6 +8,7 @@ import Search from './pages/Search';
 import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
 import Accounts from './pages/Accounts';
+import Categories from './pages/Categories';
 import LockScreen from './components/LockScreen';
 import { isBiometricEnabled, isBiometricAvailable } from './utils/biometric';
 
@@ -17,10 +18,7 @@ const App = () => {
 
   useEffect(() => {
     const checkLock = async () => {
-      if (!Capacitor.isNativePlatform()) {
-        setLockChecked(true);
-        return;
-      }
+      if (!Capacitor.isNativePlatform()) { setLockChecked(true); return; }
       try {
         const [enabled, available] = await Promise.all([
           isBiometricEnabled(),
@@ -44,9 +42,7 @@ const App = () => {
     );
   }
 
-  if (isLocked) {
-    return <LockScreen onUnlock={() => setIsLocked(false)} />;
-  }
+  if (isLocked) return <LockScreen onUnlock={() => setIsLocked(false)} />;
 
   return (
     <BrowserRouter>
@@ -58,6 +54,7 @@ const App = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/accounts" element={<Accounts />} />
+        <Route path="/categories" element={<Categories />} />
       </Routes>
     </BrowserRouter>
   );

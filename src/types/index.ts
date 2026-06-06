@@ -9,6 +9,16 @@ export interface Transaction {
   accountId: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  isSystem: boolean;
+  isDaily: boolean;
+  createdAt: string;
+}
+
 export interface Account {
   id: string;
   name: string;
@@ -27,13 +37,4 @@ export interface Budget {
   period: 'weekly' | 'monthly';
 }
 
-export type TransactionCategory =
-  | 'food'
-  | 'transport'
-  | 'shopping'
-  | 'rent'
-  | 'travel'
-  | 'health'
-  | 'entertainment'
-  | 'salary'
-  | 'other';
+export type TransactionCategory = string;
