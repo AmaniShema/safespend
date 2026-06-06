@@ -269,6 +269,23 @@ const Settings = () => {
           )}
         </div>
 
+        {/* Total Budget */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Total Budget</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/total-budget")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">📊</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Set Total Budget</p>
+                  <p className="text-gray-500 text-xs">Allocate budget across categories</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+
         {/* Categories */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Categories</p>
