@@ -1,19 +1,23 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import BalanceCard from '../components/BalanceCard';
 import StatsRow from '../components/StatsRow';
 import TransactionList from '../components/TransactionList';
 import BudgetCard from '../components/BudgetCard';
+import TotalBudgetCard from '../components/TotalBudgetCard';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBudgets } from '../hooks/useBudgets';
 import { useCurrency } from '../hooks/useCurrency';
+import { useCategories } from '../hooks/useCategories';
+import { useTotalBudget } from '../hooks/useTotalBudget';
 
 const Home = () => {
   const navigate = useNavigate();
   const { transactions, totalBalance, isLoading } = useTransactions();
   const { budgets } = useBudgets();
   const { currency } = useCurrency();
+  const { categories } = useCategories();
+  const { totalBudget } = useTotalBudget();
 
   const alertBudgets = budgets.filter(
     (b) => (b.spent / b.limit) * 100 >= 75
@@ -31,9 +35,7 @@ const Home = () => {
         ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
       : 'N/A';
 
-  // Sync balance to Android widget whenever it changes
-  useEffect(() => {
-  }, [totalBalance, currency]);
+  const topCategoryName = categories.find((c) => c.id === topCategory)?.name || topCategory;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-24">
@@ -54,11 +56,22 @@ const Home = () => {
       <StatsRow
         dailyBudget={15000}
         dailySpent={0}
-        topCategory={topCategory}
+        topCategory={topCategoryName}
         savingsPercent={32}
         currency={currency}
       />
 
+      {/* Total budget overview */}
+      {totalBudget && (
+        <TotalBudgetCard
+          totalBudget={totalBudget}
+          transactions={transactions}
+          categories={categories}
+          currency={currency}
+        />
+      )}
+
+      {/* Category budget alerts */}
       {alertBudgets.length > 0 && (
         <div className="mx-4 mt-4">
           <div className="flex justify-between items-center mb-3">
