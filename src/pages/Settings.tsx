@@ -1,13 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Check,
-  ChevronRight,
-  Database,
-  Shield,
-  Download,
-  Calendar,
-  FileText,
+  Check, ChevronRight, Database, Shield, Download,
+  Calendar, FileText, Upload, AlertCircle,
 } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { useCurrency } from '../hooks/useCurrency';
@@ -15,14 +10,19 @@ import { CURRENCIES } from '../utils/currency';
 import { getAllTransactions } from '../db/transactions';
 import { getAllAccounts } from '../db/accounts';
 import { getAllCategories } from '../db/categories';
-import { isBiometricEnabled, setBiometricEnabled, isBiometricAvailable } from '../utils/biometric';
 import { exportToPdf } from '../utils/exportPdf';
+import { exportBackup, importBackup } from '../utils/backup';
 import {
   getReportSchedule,
   setReportSchedule,
   generateManualReport,
   type ReportSchedule,
 } from '../utils/reportScheduler';
+import {
+  isBiometricEnabled,
+  setBiometricEnabled,
+  isBiometricAvailable,
+} from '../utils/biometric';
 
 const SCHEDULE_OPTIONS: { value: ReportSchedule; label: string; desc: string }[] = [
   { value: 'monthly', label: 'Monthly', desc: 'Auto-generate at start of each month' },
@@ -39,12 +39,16 @@ const MANUAL_PERIODS: { value: 'this_month' | 'last_month' | 'this_week'; label:
 const Settings = () => {
   const navigate = useNavigate();
   const { currency, setCurrency } = useCurrency();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [showManualPicker, setShowManualPicker] = useState(false);
   const [exportMsg, setExportMsg] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState('');
+  const [importError, setImportError] = useState(false);
   const [schedule, setSchedule] = useState<ReportSchedule>('monthly');
-  const [showManualPicker, setShowManualPicker] = useState(false);
   const [biometricEnabled, setBiometricState] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
 
@@ -70,14 +74,11 @@ const Settings = () => {
     setExportMsg('');
     try {
       const transactions = await getAllTransactions();
-      if (transactions.length === 0) {
-        setExportMsg('No transactions to export');
-        return;
-      }
+      if (transactions.length === 0) { setExportMsg('No transactions to export'); return; }
       const accounts = await getAllAccounts();
       const cats = await getAllCategories();
       await exportToPdf(transactions, currency, accounts, cats);
-      setExportMsg('Export successful!');
+      setExportMsg('PDF exported successfully!');
     } catch {
       setExportMsg('Export failed. Try again.');
     } finally {
@@ -86,9 +87,7 @@ const Settings = () => {
     }
   };
 
-  const handleManualReport = async (
-    period: 'this_month' | 'last_month' | 'this_week'
-  ) => {
+  const handleManualReport = async (period: 'this_month' | 'last_month' | 'this_week') => {
     setShowManualPicker(false);
     setIsExporting(true);
     setExportMsg('');
@@ -96,11 +95,47 @@ const Settings = () => {
       await generateManualReport(currency, period);
       setExportMsg('Report generated!');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed';
-      setExportMsg(msg);
+      setExportMsg(err instanceof Error ? err.message : 'Failed');
     } finally {
       setIsExporting(false);
       setTimeout(() => setExportMsg(''), 4000);
+    }
+  };
+
+  const handleExportBackup = async () => {
+    setIsExporting(true);
+    setExportMsg('');
+    try {
+      await exportBackup();
+      setExportMsg('Backup saved successfully!');
+    } catch {
+      setExportMsg('Backup failed. Try again.');
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setExportMsg(''), 4000);
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+    setImportMsg('');
+    setImportError(false);
+    try {
+      const text = await file.text();
+      const result = await importBackup(text);
+      setImportMsg(
+        `Restored: ${result.transactions} transactions, ${result.accounts} accounts, ${result.categories} categories`
+      );
+      setImportError(false);
+    } catch (err: unknown) {
+      setImportMsg(err instanceof Error ? err.message : 'Import failed');
+      setImportError(true);
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setTimeout(() => setImportMsg(''), 6000);
     }
   };
 
@@ -113,6 +148,15 @@ const Settings = () => {
         <h1 className="text-xl font-bold">Settings</h1>
       </div>
 
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleImportFile}
+      />
+
       {/* Currency picker */}
       {showCurrencyPicker && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
@@ -120,11 +164,8 @@ const Settings = () => {
             <h2 className="text-white font-semibold mb-4">Select Currency</h2>
             <div className="space-y-1 max-h-80 overflow-y-auto">
               {CURRENCIES.map((c) => (
-                <button
-                  key={c.code}
-                  onClick={() => handleCurrencySelect(c.code)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-800 transition-colors"
-                >
+                <button key={c.code} onClick={() => handleCurrencySelect(c.code)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-800 transition-colors">
                   <div className="flex items-center gap-3">
                     <span className="text-gray-300 font-mono text-sm w-8">{c.symbol}</span>
                     <div className="text-left">
@@ -132,18 +173,11 @@ const Settings = () => {
                       <p className="text-gray-400 text-xs">{c.name}</p>
                     </div>
                   </div>
-                  {currency === c.code && (
-                    <Check size={16} className="text-emerald-400" />
-                  )}
+                  {currency === c.code && <Check size={16} className="text-emerald-400" />}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowCurrencyPicker(false)}
-              className="w-full mt-4 py-3 text-gray-400 text-sm"
-            >
-              Cancel
-            </button>
+            <button onClick={() => setShowCurrencyPicker(false)} className="w-full mt-4 py-3 text-gray-400 text-sm">Cancel</button>
           </div>
         </div>
       )}
@@ -155,27 +189,17 @@ const Settings = () => {
             <h2 className="text-white font-semibold mb-4">Report Schedule</h2>
             <div className="space-y-2">
               {SCHEDULE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleScheduleSelect(opt.value)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors"
-                >
+                <button key={opt.value} onClick={() => handleScheduleSelect(opt.value)}
+                  className="w-full flex items-center justify-between p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors">
                   <div className="text-left">
                     <p className="text-white text-sm font-medium">{opt.label}</p>
                     <p className="text-gray-400 text-xs mt-0.5">{opt.desc}</p>
                   </div>
-                  {schedule === opt.value && (
-                    <Check size={16} className="text-emerald-400 flex-shrink-0" />
-                  )}
+                  {schedule === opt.value && <Check size={16} className="text-emerald-400 flex-shrink-0" />}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowSchedulePicker(false)}
-              className="w-full mt-4 py-3 text-gray-400 text-sm"
-            >
-              Cancel
-            </button>
+            <button onClick={() => setShowSchedulePicker(false)} className="w-full mt-4 py-3 text-gray-400 text-sm">Cancel</button>
           </div>
         </div>
       )}
@@ -187,93 +211,24 @@ const Settings = () => {
             <h2 className="text-white font-semibold mb-4">Generate Report For</h2>
             <div className="space-y-2">
               {MANUAL_PERIODS.map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => handleManualReport(p.value)}
-                  className="w-full p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors text-left text-white text-sm font-medium"
-                >
+                <button key={p.value} onClick={() => handleManualReport(p.value)}
+                  className="w-full p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors text-left text-white text-sm font-medium">
                   {p.label}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowManualPicker(false)}
-              className="w-full mt-4 py-3 text-gray-400 text-sm"
-            >
-              Cancel
-            </button>
+            <button onClick={() => setShowManualPicker(false)} className="w-full mt-4 py-3 text-gray-400 text-sm">Cancel</button>
           </div>
         </div>
       )}
 
       <div className="p-4 space-y-4 mt-2">
-        {/* Reports */}
-        <div>
-          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
-            Reports
-          </p>
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-            <button
-              onClick={() => setShowSchedulePicker(true)}
-              className="w-full flex items-center justify-between p-4 border-b border-gray-800"
-            >
-              <div className="flex items-center gap-3">
-                <Calendar size={18} className="text-gray-400" />
-                <div className="text-left">
-                  <p className="text-white text-sm">Auto Report Schedule</p>
-                  <p className="text-gray-500 text-xs">{selectedSchedule?.desc}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-emerald-400 text-sm">{selectedSchedule?.label}</span>
-                <ChevronRight size={16} className="text-gray-600" />
-              </div>
-            </button>
-
-            <button
-              onClick={() => setShowManualPicker(true)}
-              disabled={isExporting}
-              className="w-full flex items-center justify-between p-4 border-b border-gray-800 disabled:opacity-50"
-            >
-              <div className="flex items-center gap-3">
-                <FileText size={18} className="text-gray-400" />
-                <div className="text-left">
-                  <p className="text-white text-sm">Generate Report</p>
-                  <p className="text-gray-500 text-xs">
-                    {isExporting ? 'Generating...' : 'Choose a time period'}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={16} className="text-gray-600" />
-            </button>
-
-            <button
-              onClick={handleExportAll}
-              disabled={isExporting}
-              className="w-full flex items-center justify-between p-4 disabled:opacity-50"
-            >
-              <div className="flex items-center gap-3">
-                <Download size={18} className="text-gray-400" />
-                <div className="text-left">
-                  <p className="text-white text-sm">Export All Data</p>
-                  <p className="text-gray-500 text-xs">Full transaction history as PDF</p>
-                </div>
-              </div>
-              <ChevronRight size={16} className="text-gray-600" />
-            </button>
-          </div>
-          {exportMsg && (
-            <p className={`text-xs mt-2 px-1 ${exportMsg.includes('fail') || exportMsg.includes('No') ? 'text-red-400' : 'text-emerald-400'}`}>
-              {exportMsg}
-            </p>
-          )}
-        </div>
 
         {/* Total Budget */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Total Budget</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800">
-            <button onClick={() => navigate("/total-budget")} className="w-full flex items-center justify-between p-4">
+            <button onClick={() => navigate('/total-budget')} className="w-full flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <span className="text-xl">📊</span>
                 <div className="text-left">
@@ -290,7 +245,7 @@ const Settings = () => {
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Categories</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800">
-            <button onClick={() => navigate("/categories")} className="w-full flex items-center justify-between p-4">
+            <button onClick={() => navigate('/categories')} className="w-full flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <span className="text-xl">🏷️</span>
                 <div className="text-left">
@@ -307,7 +262,7 @@ const Settings = () => {
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Accounts</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800">
-            <button onClick={() => navigate("/accounts")} className="w-full flex items-center justify-between p-4">
+            <button onClick={() => navigate('/accounts')} className="w-full flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <span className="text-xl">🏦</span>
                 <div className="text-left">
@@ -324,7 +279,7 @@ const Settings = () => {
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Budgets</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800">
-            <button onClick={() => navigate("/budgets")} className="w-full flex items-center justify-between p-4">
+            <button onClick={() => navigate('/budgets')} className="w-full flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <span className="text-xl">💰</span>
                 <div className="text-left">
@@ -337,35 +292,138 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Reports */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Reports</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+            <button onClick={() => setShowSchedulePicker(true)}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <Calendar size={18} className="text-gray-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Auto Report Schedule</p>
+                  <p className="text-gray-500 text-xs">{selectedSchedule?.desc}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400 text-sm">{selectedSchedule?.label}</span>
+                <ChevronRight size={16} className="text-gray-600" />
+              </div>
+            </button>
+            <button onClick={() => setShowManualPicker(true)} disabled={isExporting}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 disabled:opacity-50">
+              <div className="flex items-center gap-3">
+                <FileText size={18} className="text-gray-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Generate PDF Report</p>
+                  <p className="text-gray-500 text-xs">{isExporting ? 'Generating...' : 'Choose a time period'}</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+            <button onClick={handleExportAll} disabled={isExporting}
+              className="w-full flex items-center justify-between p-4 disabled:opacity-50">
+              <div className="flex items-center gap-3">
+                <Download size={18} className="text-gray-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Export All as PDF</p>
+                  <p className="text-gray-500 text-xs">Full transaction history</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+          {exportMsg && (
+            <p className={`text-xs mt-2 px-1 ${exportMsg.includes('fail') || exportMsg.includes('No') ? 'text-red-400' : 'text-emerald-400'}`}>
+              {exportMsg}
+            </p>
+          )}
+        </div>
+
+        {/* Backup & Recovery */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Backup & Recovery</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+            <button onClick={handleExportBackup} disabled={isExporting}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 disabled:opacity-50">
+              <div className="flex items-center gap-3">
+                <Download size={18} className="text-emerald-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Export JSON Backup</p>
+                  <p className="text-gray-500 text-xs">Save all data for recovery</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+            <button onClick={() => fileInputRef.current?.click()} disabled={isImporting}
+              className="w-full flex items-center justify-between p-4 disabled:opacity-50">
+              <div className="flex items-center gap-3">
+                <Upload size={18} className="text-blue-400" />
+                <div className="text-left">
+                  <p className="text-white text-sm">Import JSON Backup</p>
+                  <p className="text-gray-500 text-xs">{isImporting ? 'Importing...' : 'Restore from backup file'}</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+          {importMsg && (
+            <div className={`flex items-start gap-2 mt-2 px-1 ${importError ? 'text-red-400' : 'text-emerald-400'}`}>
+              {importError && <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />}
+              <p className="text-xs">{importMsg}</p>
+            </div>
+          )}
+          <p className="text-gray-600 text-xs mt-2 px-1">
+            💡 Keep your JSON backup file safe. Use it to restore data after reinstalling.
+          </p>
+        </div>
+
         {/* Data Management */}
         <div>
-          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
-            Data Management
-          </p>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Data Management</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800">
-            <button
-              onClick={() => setShowCurrencyPicker(true)}
-              className="w-full flex items-center justify-between p-4"
-            >
+            <button onClick={() => setShowCurrencyPicker(true)} className="w-full flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <Database size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Base Currency</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-sm">
-                  {selectedCurrency?.code} ({selectedCurrency?.symbol})
-                </span>
+                <span className="text-gray-400 text-sm">{selectedCurrency?.code} ({selectedCurrency?.symbol})</span>
                 <ChevronRight size={16} className="text-gray-600" />
               </div>
             </button>
           </div>
         </div>
 
+        {/* Security */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Security</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white text-sm font-medium">Biometric Lock</p>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  {biometricAvailable ? 'Fingerprint / PIN protection' : 'Not available on this device'}
+                </p>
+              </div>
+              <button
+                disabled={!biometricAvailable}
+                onClick={async () => {
+                  const next = !biometricEnabled;
+                  await setBiometricEnabled(next);
+                  setBiometricState(next);
+                }}
+                className={`w-12 h-6 rounded-full transition-colors relative ${biometricEnabled ? 'bg-emerald-500' : 'bg-gray-700'} disabled:opacity-40`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${biometricEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Privacy */}
         <div>
-          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
-            Privacy
-          </p>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Privacy</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
             <div className="flex items-center gap-3 mb-3">
               <Shield size={18} className="text-emerald-400" />
@@ -384,41 +442,9 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Security */}
-        <div>
-          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Security</p>
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-white text-sm font-medium">Biometric Lock</p>
-                <p className="text-gray-500 text-xs mt-0.5">
-                  {biometricAvailable ? "Fingerprint / PIN protection" : "Not available on this device"}
-                </p>
-              </div>
-              <button
-                disabled={!biometricAvailable}
-                onClick={async () => {
-                  const next = !biometricEnabled;
-                  await setBiometricEnabled(next);
-                  setBiometricState(next);
-                }}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  biometricEnabled ? "bg-emerald-500" : "bg-gray-700"
-                } disabled:opacity-40`}
-              >
-                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                  biometricEnabled ? "translate-x-6" : "translate-x-0.5"
-                }`} />
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* About */}
         <div>
-          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">
-            About
-          </p>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">About</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-400 text-sm">App</span>
