@@ -144,7 +144,8 @@ const Categories = () => {
             {systemCats.map((cat) => (
               <div
                 key={cat.id}
-                className="flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800"
+                onClick={() => navigate(`/categories/${cat.id}`)}
+                className="w-full flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800 hover:border-gray-600 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -182,7 +183,8 @@ const Categories = () => {
               {customCats.map((cat) => (
                 <div
                   key={cat.id}
-                  className="flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800"
+                  onClick={() => navigate(`/categories/${cat.id}`)}
+                className="w-full flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800 hover:border-gray-600 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div

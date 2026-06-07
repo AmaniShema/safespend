@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
 import Accounts from './pages/Accounts';
 import Categories from './pages/Categories';
+import CategoryItems from './pages/CategoryItems';
 import TotalBudget from './pages/TotalBudget';
 import LockScreen from './components/LockScreen';
 import { isBiometricEnabled, isBiometricAvailable } from './utils/biometric';
@@ -56,6 +57,7 @@ const App = () => {
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/categories/:categoryId" element={<CategoryItems />} />
         <Route path="/total-budget" element={<TotalBudget />} />
       </Routes>
     </BrowserRouter>
