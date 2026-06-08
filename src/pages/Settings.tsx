@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Check, ChevronRight, Database, Shield, Download,
+  Check, ChevronRight, Database, Shield, Download, Sun, Moon,
   Calendar, FileText, Upload, AlertCircle,
 } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
@@ -23,6 +23,7 @@ import {
   setBiometricEnabled,
   isBiometricAvailable,
 } from '../utils/biometric';
+import { useTheme } from '../hooks/useTheme';
 
 const SCHEDULE_OPTIONS: { value: ReportSchedule; label: string; desc: string }[] = [
   { value: 'monthly', label: 'Monthly', desc: 'Auto-generate at start of each month' },
@@ -39,6 +40,7 @@ const MANUAL_PERIODS: { value: 'this_month' | 'last_month' | 'this_week'; label:
 const Settings = () => {
   const navigate = useNavigate();
   const { currency, setCurrency } = useCurrency();
+  const { theme, toggleTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
@@ -392,6 +394,25 @@ const Settings = () => {
                 <ChevronRight size={16} className="text-gray-600" />
               </div>
             </button>
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Appearance</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {theme === "dark" ? <Moon size={18} className="text-gray-400" /> : <Sun size={18} className="text-yellow-400" />}
+                <div>
+                  <p className="text-white text-sm font-medium">{theme === "dark" ? "Dark Mode" : "Light Mode"}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Switch app appearance</p>
+                </div>
+              </div>
+              <button onClick={toggleTheme} className={"w-12 h-6 rounded-full transition-colors relative " + (theme === "light" ? "bg-emerald-500" : "bg-gray-700")}>
+                <div className={"absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform " + (theme === "light" ? "translate-x-6" : "translate-x-0.5")} />
+              </button>
+            </div>
           </div>
         </div>
 

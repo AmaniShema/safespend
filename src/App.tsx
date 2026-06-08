@@ -13,12 +13,19 @@ import CategoryItems from './pages/CategoryItems';
 import TotalBudget from './pages/TotalBudget';
 import LockScreen from './components/LockScreen';
 import { isBiometricEnabled, isBiometricAvailable } from './utils/biometric';
+import { getSetting } from './db/settings';
 
 const App = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [lockChecked, setLockChecked] = useState(false);
 
   useEffect(() => {
+    // Apply saved theme on startup
+    getSetting('theme').then((saved) => {
+      const t = saved || 'dark';
+      document.documentElement.classList.add(t);
+    });
+
     const checkLock = async () => {
       if (!Capacitor.isNativePlatform()) { setLockChecked(true); return; }
       try {
