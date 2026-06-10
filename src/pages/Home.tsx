@@ -13,29 +13,32 @@ import { useTotalBudget } from '../hooks/useTotalBudget';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { transactions, totalBalance, isLoading } = useTransactions();
+  const { transactions, totalBalance, isLoading, refresh } = useTransactions();
   const { budgets } = useBudgets();
   const { currency } = useCurrency();
   const { categories } = useCategories();
   const { totalBudget } = useTotalBudget();
 
+  const categoryMap = Object.fromEntries(
+    categories.map((c) => [c.id, { name: c.name, emoji: c.emoji }])
+  );
+
   const alertBudgets = budgets.filter(
     (b) => (b.spent / b.limit) * 100 >= 75
   );
 
-  const topCategory =
-    transactions.length > 0
-      ? Object.entries(
-          transactions
-            .filter((t) => t.type === 'expense')
-            .reduce((acc, t) => {
-              acc[t.category] = (acc[t.category] || 0) + t.amount;
-              return acc;
-            }, {} as Record<string, number>)
-        ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
-      : 'N/A';
+  const topCategoryId = transactions.length > 0
+    ? Object.entries(
+        transactions
+          .filter((t) => t.type === 'expense')
+          .reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+          }, {} as Record<string, number>)
+      ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
+    : 'N/A';
 
-  const topCategoryName = categories.find((c) => c.id === topCategory)?.name || topCategory;
+  const topCategoryName = categoryMap[topCategoryId]?.name || topCategoryId;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-24">
@@ -61,7 +64,6 @@ const Home = () => {
         currency={currency}
       />
 
-      {/* Total budget overview */}
       {totalBudget && (
         <TotalBudgetCard
           totalBudget={totalBudget}
@@ -71,38 +73,30 @@ const Home = () => {
         />
       )}
 
-      {/* Category budget alerts */}
       {alertBudgets.length > 0 && (
         <div className="mx-4 mt-4">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-white font-semibold">Budget Alerts</h3>
-            <button
-              onClick={() => navigate('/budgets')}
-              className="text-emerald-400 text-sm"
-            >
+            <button onClick={() => navigate('/budgets')} className="text-emerald-400 text-sm">
               Manage
             </button>
           </div>
           <div className="space-y-3">
             {alertBudgets.map((budget) => (
-              <BudgetCard
-                key={budget.id}
-                budget={budget}
-                currency={currency}
-              />
+              <BudgetCard key={budget.id} budget={budget} currency={currency} />
             ))}
           </div>
         </div>
       )}
 
       {isLoading ? (
-        <div className="mx-4 mt-6 text-center text-gray-500 text-sm">
-          Loading...
-        </div>
+        <div className="mx-4 mt-6 text-center text-gray-500 text-sm">Loading...</div>
       ) : (
         <TransactionList
           transactions={transactions.slice(0, 10)}
           currency={currency}
+          categoryMap={categoryMap}
+          onRefresh={refresh}
         />
       )}
 

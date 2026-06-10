@@ -37,17 +37,35 @@ export const addTransaction = async (
      (id, amount, type, category, note, date, createdAt, accountId)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      transaction.id,
-      transaction.amount,
-      transaction.type,
-      transaction.category,
-      transaction.note,
-      transaction.date,
-      transaction.createdAt,
-      transaction.accountId,
+      transaction.id, transaction.amount, transaction.type,
+      transaction.category, transaction.note, transaction.date,
+      transaction.createdAt, transaction.accountId,
     ]
   );
   return transaction;
+};
+
+export const updateTransaction = async (
+  id: string,
+  data: Omit<Transaction, 'id' | 'createdAt'>
+): Promise<void> => {
+  if (!isNative()) {
+    const existing = getLocalTransactions();
+    saveLocalTransactions(
+      existing.map((t) =>
+        t.id === id ? { ...t, ...data, accountId: data.accountId || 'default' } : t
+      )
+    );
+    return;
+  }
+  const db = getDatabase();
+  await db.run(
+    `UPDATE transactions
+     SET amount = ?, type = ?, category = ?, note = ?, date = ?, accountId = ?
+     WHERE id = ?`,
+    [data.amount, data.type, data.category, data.note, data.date,
+     data.accountId || 'default', id]
+  );
 };
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
@@ -70,8 +88,7 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
 
 export const deleteTransaction = async (id: string): Promise<void> => {
   if (!isNative()) {
-    const existing = getLocalTransactions();
-    saveLocalTransactions(existing.filter((t) => t.id !== id));
+    saveLocalTransactions(getLocalTransactions().filter((t) => t.id !== id));
     return;
   }
   const db = getDatabase();

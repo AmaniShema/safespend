@@ -11,6 +11,7 @@ import Accounts from './pages/Accounts';
 import Categories from './pages/Categories';
 import CategoryItems from './pages/CategoryItems';
 import TotalBudget from './pages/TotalBudget';
+import EditTransaction from './pages/EditTransaction';
 import LockScreen from './components/LockScreen';
 import { isBiometricEnabled, isBiometricAvailable } from './utils/biometric';
 import { getSetting } from './db/settings';
@@ -66,6 +67,7 @@ const App = () => {
         <Route path="/categories" element={<Categories />} />
         <Route path="/categories/:categoryId" element={<CategoryItems />} />
         <Route path="/total-budget" element={<TotalBudget />} />
+        <Route path="/edit-transaction/:id" element={<EditTransaction />} />
       </Routes>
     </BrowserRouter>
   );
