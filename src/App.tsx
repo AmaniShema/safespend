@@ -14,6 +14,7 @@ import TotalBudget from './pages/TotalBudget';
 import EditTransaction from './pages/EditTransaction';
 import SavingsGoals from './pages/SavingsGoals';
 import SavingsGoalDetail from './pages/SavingsGoalDetail';
+import HouseholdFund from './pages/HouseholdFund';
 import LockScreen from './components/LockScreen';
 import { isBiometricEnabled, isBiometricAvailable } from './utils/biometric';
 import { getSetting } from './db/settings';
@@ -72,6 +73,7 @@ const App = () => {
         <Route path="/edit-transaction/:id" element={<EditTransaction />} />
         <Route path="/savings-goals" element={<SavingsGoals />} />
         <Route path="/savings-goals/:id" element={<SavingsGoalDetail />} />
+        <Route path="/household" element={<HouseholdFund />} />
       </Routes>
     </BrowserRouter>
   );

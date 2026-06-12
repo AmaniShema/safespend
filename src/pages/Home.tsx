@@ -5,11 +5,13 @@ import StatsRow from '../components/StatsRow';
 import TransactionList from '../components/TransactionList';
 import BudgetCard from '../components/BudgetCard';
 import TotalBudgetCard from '../components/TotalBudgetCard';
+import HouseholdFundCard from '../components/HouseholdFundCard';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBudgets } from '../hooks/useBudgets';
 import { useCurrency } from '../hooks/useCurrency';
 import { useCategories } from '../hooks/useCategories';
 import { useTotalBudget } from '../hooks/useTotalBudget';
+import { useHousehold } from '../hooks/useHousehold';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,14 +20,20 @@ const Home = () => {
   const { currency } = useCurrency();
   const { categories } = useCategories();
   const { totalBudget } = useTotalBudget();
+  const { contributors, totalFund } = useHousehold();
 
   const categoryMap = Object.fromEntries(
     categories.map((c) => [c.id, { name: c.name, emoji: c.emoji }])
   );
 
+  const activeContributors = contributors.filter((c) => c.status === 'active');
+
   const alertBudgets = budgets.filter(
     (b) => (b.spent / b.limit) * 100 >= 75
   );
+
+  const now = new Date();
+  const todayStr = now.toDateString();
 
   const topCategoryId = transactions.length > 0
     ? Object.entries(
@@ -40,27 +48,62 @@ const Home = () => {
 
   const topCategoryName = categoryMap[topCategoryId]?.name || topCategoryId;
 
+  // Daily budget derived from total budget
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  let dailyBudget = 0;
+  if (totalBudget) {
+    dailyBudget = totalBudget.period === 'monthly'
+      ? totalBudget.amount / daysInMonth
+      : totalBudget.amount / 7;
+  }
+
+  // Today's spending
+  const dailySpent = transactions
+    .filter((t) => t.type === 'expense' && new Date(t.date).toDateString() === todayStr)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // This month's income/expenses for savings rate
+  const thisMonthTx = transactions.filter((t) => {
+    const d = new Date(t.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const monthIncome = thisMonthTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const monthExpenses = thisMonthTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const hasIncome = monthIncome > 0;
+  const savingsPercent = hasIncome
+    ? Math.round(((monthIncome - monthExpenses) / monthIncome) * 100)
+    : 0;
+
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-24">
       <div className="flex items-center justify-between p-4 pb-0">
         <h1 className="text-xl font-bold text-white">SafeSpend</h1>
         <span className="text-gray-500 text-sm">
-          {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </span>
       </div>
 
-      <BalanceCard
-        totalBalance={totalBalance}
-        weeklyChange={0}
-        weeklyChangePercent={0}
-        currency={currency}
-      />
+      {activeContributors.length > 0 ? (
+        <HouseholdFundCard
+          contributors={contributors}
+          totalFund={totalFund}
+          currency={currency}
+        />
+      ) : (
+        <BalanceCard
+          totalBalance={totalBalance}
+          weeklyChange={0}
+          weeklyChangePercent={0}
+          currency={currency}
+        />
+      )}
 
       <StatsRow
-        dailyBudget={15000}
-        dailySpent={0}
+        dailyBudget={dailyBudget}
+        dailySpent={dailySpent}
         topCategory={topCategoryName}
-        savingsPercent={32}
+        savingsPercent={savingsPercent}
+        hasIncome={hasIncome}
         currency={currency}
       />
 

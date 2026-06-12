@@ -246,6 +246,23 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Household Fund */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Household</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/household")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🏡</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Household Fund</p>
+                  <p className="text-gray-500 text-xs">Track shared contributions</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+
         {/* Savings Goals */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Savings</p>
