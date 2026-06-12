@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Category } from '../types';
-import { getAllCategories, createCategory, deleteCategory, initCategories } from '../db/categories';
+import { getAllCategories, createCategory, updateCategory, deleteCategory, initCategories } from '../db/categories';
 
 interface UseCategoriesReturn {
   categories: Category[];
@@ -8,6 +8,7 @@ interface UseCategoriesReturn {
   incomeCategories: Category[];
   isLoading: boolean;
   addCategory: (data: Omit<Category, 'id' | 'createdAt' | 'isSystem' | 'isDaily'>) => Promise<void>;
+  editCategory: (id: string, data: { name: string; emoji: string; color: string }) => Promise<void>;
   removeCategory: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -40,6 +41,11 @@ export const useCategories = (): UseCategoriesReturn => {
     await refresh();
   };
 
+  const editCategory = async (id: string, data: { name: string; emoji: string; color: string }): Promise<void> => {
+    await updateCategory(id, data);
+    await refresh();
+  };
+
   const removeCategory = async (id: string): Promise<void> => {
     await deleteCategory(id);
     await refresh();
@@ -55,6 +61,7 @@ export const useCategories = (): UseCategoriesReturn => {
     expenseCategories,
     incomeCategories,
     isLoading,
+    editCategory,
     addCategory,
     removeCategory,
     refresh,

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, X, Lock, Pencil } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
+import type { Category } from '../types';
 
 const EMOJI_OPTIONS = [
   '🍽️','🚗','🛍️','🏠','✈️','❤️','🎬','💰','🎲','📱',
@@ -17,30 +18,56 @@ const COLOR_OPTIONS = [
 
 const Categories = () => {
   const navigate = useNavigate();
-  const { categories, addCategory, removeCategory } = useCategories();
+  const { categories, addCategory, editCategory, removeCategory } = useCategories();
   const [showForm, setShowForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🎯');
   const [color, setColor] = useState(COLOR_OPTIONS[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const openCreateForm = () => {
+    setEditingCategory(null);
+    setName('');
+    setEmoji('🎯');
+    setColor(COLOR_OPTIONS[0]);
+    setError('');
+    setShowForm(true);
+  };
+
+  const openEditForm = (cat: Category) => {
+    setEditingCategory(cat);
+    setName(cat.name);
+    setEmoji(cat.emoji);
+    setColor(cat.color);
+    setError('');
+    setShowForm(true);
+  };
+
   const handleSave = async () => {
     if (!name.trim()) { setError('Enter a category name'); return; }
-    if (categories.some((c) => c.name.toLowerCase() === name.trim().toLowerCase())) {
-      setError('Category already exists');
-      return;
-    }
+
+    const duplicate = categories.some(
+      (c) => c.name.toLowerCase() === name.trim().toLowerCase() && c.id !== editingCategory?.id
+    );
+    if (duplicate) { setError('Category already exists'); return; }
+
     setIsSaving(true);
     setError('');
     try {
-      await addCategory({ name: name.trim(), emoji, color });
+      if (editingCategory) {
+        await editCategory(editingCategory.id, { name: name.trim(), emoji, color });
+      } else {
+        await addCategory({ name: name.trim(), emoji, color });
+      }
       setShowForm(false);
+      setEditingCategory(null);
       setName('');
       setEmoji('🎯');
       setColor(COLOR_OPTIONS[0]);
     } catch {
-      setError('Failed to create category');
+      setError('Failed to save category');
     } finally {
       setIsSaving(false);
     }
@@ -56,7 +83,7 @@ const Categories = () => {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-lg font-semibold">Categories</h1>
-        <button onClick={() => setShowForm(true)} className="text-emerald-400">
+        <button onClick={openCreateForm} className="text-emerald-400">
           <Plus size={24} />
         </button>
       </div>
@@ -65,8 +92,10 @@ const Categories = () => {
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
           <div className="bg-gray-900 rounded-t-2xl w-full p-4 border-t border-gray-800 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white font-semibold">New Category</h2>
-              <button onClick={() => setShowForm(false)}>
+              <h2 className="text-white font-semibold">
+                {editingCategory ? 'Edit Category' : 'New Category'}
+              </h2>
+              <button onClick={() => { setShowForm(false); setEditingCategory(null); }}>
                 <X size={20} className="text-gray-400" />
               </button>
             </div>
@@ -128,7 +157,7 @@ const Categories = () => {
               disabled={isSaving}
               className="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl disabled:opacity-50"
             >
-              {isSaving ? 'Creating...' : 'Create Category'}
+              {isSaving ? 'Saving...' : editingCategory ? 'Save Changes' : 'Create Category'}
             </button>
           </div>
         </div>
@@ -144,10 +173,12 @@ const Categories = () => {
             {systemCats.map((cat) => (
               <div
                 key={cat.id}
-                onClick={() => navigate(`/categories/${cat.id}`)}
-                className="w-full flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800 hover:border-gray-600 transition-colors"
+                className="flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(`/categories/${cat.id}`)}
+                  className="flex items-center gap-3 flex-1 text-left"
+                >
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
                     style={{ backgroundColor: cat.color + '25' }}
@@ -160,7 +191,7 @@ const Categories = () => {
                       <p className="text-indigo-400 text-xs">Random & unexpected</p>
                     )}
                   </div>
-                </div>
+                </button>
                 <Lock size={14} className="text-gray-600" />
               </div>
             ))}
@@ -183,10 +214,12 @@ const Categories = () => {
               {customCats.map((cat) => (
                 <div
                   key={cat.id}
-                  onClick={() => navigate(`/categories/${cat.id}`)}
-                className="w-full flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800 hover:border-gray-600 transition-colors"
+                  className="flex items-center justify-between bg-gray-900 rounded-xl p-3 border border-gray-800"
                 >
-                  <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => navigate(`/categories/${cat.id}`)}
+                    className="flex items-center gap-3 flex-1 text-left"
+                  >
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
                       style={{ backgroundColor: cat.color + '25' }}
@@ -194,13 +227,21 @@ const Categories = () => {
                       {cat.emoji}
                     </div>
                     <p className="text-white text-sm font-medium">{cat.name}</p>
-                  </div>
-                  <button
-                    onClick={() => removeCategory(cat.id)}
-                    className="text-gray-600 hover:text-red-400 transition-colors text-sm px-2 py-1 rounded-lg hover:bg-red-500/10"
-                  >
-                    Remove
                   </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditForm(cat)}
+                      className="text-gray-500 hover:text-emerald-400 transition-colors p-2 rounded-lg hover:bg-emerald-500/10"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => removeCategory(cat.id)}
+                      className="text-gray-500 hover:text-red-400 transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-red-500/10"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

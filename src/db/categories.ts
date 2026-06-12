@@ -22,7 +22,6 @@ const getLocalCategories = (): Category[] => {
   const raw = localStorage.getItem(LOCAL_KEY);
   if (!raw) return SYSTEM_CATEGORIES;
   const stored: Category[] = JSON.parse(raw);
-  // Merge system categories with stored ones
   const storedIds = stored.map((c) => c.id);
   const missingSystems = SYSTEM_CATEGORIES.filter((s) => !storedIds.includes(s.id));
   return [...missingSystems, ...stored];
@@ -112,9 +111,31 @@ export const createCategory = async (
   return category;
 };
 
-export const deleteCategory = async (id: string): Promise<void> => {
+export const updateCategory = async (
+  id: string,
+  data: { name: string; emoji: string; color: string }
+): Promise<void> => {
   const cat = (await getAllCategories()).find((c) => c.id === id);
   if (cat?.isSystem) return; // protect system categories
+
+  if (!isNative()) {
+    const existing = getLocalCategories();
+    saveLocalCategories(
+      existing.map((c) => (c.id === id ? { ...c, ...data } : c))
+    );
+    return;
+  }
+
+  const db = getDatabase();
+  await db.run(
+    'UPDATE categories SET name = ?, emoji = ?, color = ? WHERE id = ? AND isSystem = 0',
+    [data.name, data.emoji, data.color, id]
+  );
+};
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  const cat = (await getAllCategories()).find((c) => c.id === id);
+  if (cat?.isSystem) return;
 
   if (!isNative()) {
     saveLocalCategories(getLocalCategories().filter((c) => c.id !== id));
