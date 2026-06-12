@@ -343,7 +343,7 @@ export const exportToPdf = async (
         checkNewPage(6);
         doc.setFontSize(7.5);
         doc.setTextColor(16, 185, 129);
-        doc.text('  🎉 Goal reached', 18, y + 4);
+        doc.text('  Goal reached', 18, y + 4);
         y += 6;
       }
 
@@ -359,7 +359,7 @@ export const exportToPdf = async (
       doc.setTextColor(52, 211, 153);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('🎉 Goals Completed This Period', 18, y + 5.5);
+      doc.text('Goals Completed This Period', 18, y + 5.5);
       y += 11;
 
       completedThisPeriod.forEach((g) => {
