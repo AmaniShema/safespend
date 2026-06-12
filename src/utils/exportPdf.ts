@@ -39,13 +39,16 @@ export const exportToPdf = async (
   savingsGoals: SavingsGoal[] = [],
   savingsTransactions: SavingsTransaction[] = [],
   periodStart?: Date,
-  periodEnd?: Date
+  periodEnd?: Date,
+  allTransactions: Transaction[] = []
 ): Promise<void> => {
 
   let allCategories = categories;
   if (allCategories.length === 0) {
     allCategories = await getAllCategories();
   }
+
+  const fullHistory = allTransactions.length > 0 ? allTransactions : transactions;
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -90,7 +93,11 @@ export const exportToPdf = async (
     14, 35
   );
 
-  if (accounts.length > 1) {
+  if (periodStart && periodEnd) {
+    doc.setFontSize(9);
+    const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    doc.text(`Period: ${fmt(periodStart)} - ${fmt(periodEnd)}`, pageWidth - 14, 35, { align: 'right' });
+  } else if (accounts.length > 1) {
     doc.setFontSize(9);
     doc.text(
       `Accounts: ${accounts.map((a) => a.name).join(', ')}`,
@@ -142,34 +149,91 @@ export const exportToPdf = async (
 
   y += 32;
 
-  // Per-account summary
-  if (accounts.length > 1) {
+  // ── Per-account summary ───────────────────────────────
+  const usedAccountIds = new Set(transactions.map((t) => t.accountId || 'default'));
+  const usedAccounts = accounts.length > 0
+    ? accounts.filter((a) => usedAccountIds.has(a.id))
+    : [];
+
+  if (usedAccounts.length > 0) {
+    checkNewPage(15);
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Account Summary', 14, y);
     y += 7;
-    accounts.forEach((account) => {
-      checkNewPage(10);
-      const accTx = transactions.filter((t) => t.accountId === account.id);
-      const accBalance = accTx.reduce((sum, t) =>
-        t.type === 'income' ? sum + t.amount : sum - t.amount, 0);
-      doc.setFillColor(31, 41, 55);
-      doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
-      doc.setTextColor(209, 213, 219);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${account.name} (${account.type})`, 18, y + 5.5);
-      doc.text(`${accTx.length} transactions`, pageWidth / 2, y + 5.5, { align: 'center' });
-      doc.setTextColor(accBalance >= 0 ? 52 : 252, accBalance >= 0 ? 211 : 165, accBalance >= 0 ? 153 : 165);
-      doc.setFont('helvetica', 'bold');
-      doc.text(formatCurrency(accBalance, currency), pageWidth - 17, y + 5.5, { align: 'right' });
-      y += 10;
+
+    usedAccounts.forEach((account) => {
+      const accTx = transactions.filter((t) => (t.accountId || 'default') === account.id);
+      const accIncome = accTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+      const accExpenses = accTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+      if (periodStart) {
+        // Opening / Closing balance mode
+        checkNewPage(38);
+
+        const openingBalance = fullHistory
+          .filter((t) => (t.accountId || 'default') === account.id && new Date(t.date) < periodStart)
+          .reduce((sum, t) => (t.type === 'income' ? sum + t.amount : sum - t.amount), 0);
+        const closingBalance = openingBalance + accIncome - accExpenses;
+
+        // Header bar
+        doc.setFillColor(31, 41, 55);
+        doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${account.name} (${account.type})`, 18, y + 5.5);
+        y += 10;
+
+        const rows: [string, string, [number, number, number]][] = [
+          ['Opening Balance', formatCurrency(openingBalance, currency), [156, 163, 175]],
+          ['+ Income', formatCurrency(accIncome, currency), [52, 211, 153]],
+          ['- Expenses', formatCurrency(accExpenses, currency), [252, 165, 165]],
+        ];
+
+        rows.forEach(([label, value, color]) => {
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 116, 139);
+          doc.text(label, 20, y + 4);
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(value, pageWidth - 17, y + 4, { align: 'right' });
+          y += 6;
+        });
+
+        // Closing balance - highlighted
+        doc.setFillColor(6, 78, 59);
+        doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Closing Balance', 20, y + 5.5);
+        doc.setTextColor(52, 211, 153);
+        doc.text(formatCurrency(closingBalance, currency), pageWidth - 17, y + 5.5, { align: 'right' });
+        y += 12;
+      } else {
+        // Simple net balance mode (Export All)
+        checkNewPage(10);
+        const accBalance = accIncome - accExpenses;
+        doc.setFillColor(31, 41, 55);
+        doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
+        doc.setTextColor(209, 213, 219);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${account.name} (${account.type})`, 18, y + 5.5);
+        doc.text(`${accTx.length} transactions`, pageWidth / 2, y + 5.5, { align: 'center' });
+        doc.setTextColor(accBalance >= 0 ? 52 : 252, accBalance >= 0 ? 211 : 165, accBalance >= 0 ? 153 : 165);
+        doc.setFont('helvetica', 'bold');
+        doc.text(formatCurrency(accBalance, currency), pageWidth - 17, y + 5.5, { align: 'right' });
+        y += 10;
+      }
     });
     y += 4;
   }
 
   // Transactions table
+  checkNewPage(20);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
@@ -255,7 +319,6 @@ export const exportToPdf = async (
       const pct = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
       const isComplete = goal.currentAmount >= goal.targetAmount;
 
-      // Goal header bar
       doc.setFillColor(31, 41, 55);
       doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
       doc.setTextColor(255, 255, 255);
@@ -270,14 +333,12 @@ export const exportToPdf = async (
       );
       y += 9;
 
-      // progress bar
       doc.setFillColor(55, 65, 81);
       doc.roundedRect(14, y, pageWidth - 28, 2.5, 1, 1, 'F');
       doc.setFillColor(16, 185, 129);
       doc.roundedRect(14, y, (pageWidth - 28) * (pct / 100), 2.5, 1, 1, 'F');
       y += 6;
 
-      // Activity within report period
       const goalTx = savingsTransactions.filter((t) => t.goalId === goal.id);
 
       if (periodStart && periodEnd) {
@@ -311,7 +372,6 @@ export const exportToPdf = async (
             });
         }
 
-        // Check if goal was completed during this period
         const sorted = [...goalTx].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         let cumulative = 0;
         let completionDate: Date | null = null;
@@ -350,7 +410,6 @@ export const exportToPdf = async (
       y += 3;
     });
 
-    // Goals completed this period
     if (completedThisPeriod.length > 0) {
       y += 4;
       checkNewPage(10 + completedThisPeriod.length * 7);

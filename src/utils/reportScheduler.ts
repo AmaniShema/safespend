@@ -1,7 +1,7 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { getSetting, setSetting } from '../db/settings';
-import { getTransactionsByMonth } from '../db/transactions';
+import { getTransactionsByMonth, getAllTransactions } from '../db/transactions';
 import { getAllAccounts } from '../db/accounts';
 import { getAllCategories } from '../db/categories';
 import { getAllGoals, getAllSavingsTransactions } from '../db/savingsGoals';
@@ -99,7 +99,8 @@ export const checkAndGenerateReport = async (currency: string): Promise<boolean>
     const cats = await getAllCategories();
     const goals = await getAllGoals();
     const goalTx = await getAllSavingsTransactions();
-    await exportToPdf(transactions, currency, accounts, cats, goals, goalTx, periodStart, periodEnd);
+    const allTx = await getAllTransactions();
+    await exportToPdf(transactions, currency, accounts, cats, goals, goalTx, periodStart, periodEnd, allTx);
     await setSetting(LAST_REPORT_KEY, now.toISOString());
 
     const label = schedule === 'monthly' ? 'Monthly' : 'Weekly';
@@ -148,6 +149,7 @@ export const generateManualReport = async (
   const cats = await getAllCategories();
   const goals = await getAllGoals();
   const goalTx = await getAllSavingsTransactions();
-  await exportToPdf(transactions, currency, accounts, cats, goals, goalTx, periodStart, periodEnd);
+  const allTx = await getAllTransactions();
+  await exportToPdf(transactions, currency, accounts, cats, goals, goalTx, periodStart, periodEnd, allTx);
   await setSetting(LAST_REPORT_KEY, now.toISOString());
 };
