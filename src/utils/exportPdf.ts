@@ -3,6 +3,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import type { Transaction, Account, Category } from '../types';
+import type { SavingsGoal, SavingsTransaction } from '../db/savingsGoals';
 import { formatCurrency } from './currency';
 import { getAllCategories } from '../db/categories';
 
@@ -19,14 +20,28 @@ const CATEGORY_COLORS: Record<string, [number, number, number]> = {
   other: [107, 114, 128],
 };
 
+const formatDuration = (days: number): string => {
+  if (days <= 0) return 'less than a day';
+  if (days === 1) return '1 day';
+  if (days < 30) return `${days} days`;
+  const months = Math.floor(days / 30);
+  const remDays = days % 30;
+  const monthLabel = months === 1 ? '1 month' : `${months} months`;
+  if (remDays === 0) return monthLabel;
+  return `${monthLabel} ${remDays} day${remDays === 1 ? '' : 's'}`;
+};
+
 export const exportToPdf = async (
   transactions: Transaction[],
   currency: string,
   accounts: Account[] = [],
-  categories: Category[] = []
+  categories: Category[] = [],
+  savingsGoals: SavingsGoal[] = [],
+  savingsTransactions: SavingsTransaction[] = [],
+  periodStart?: Date,
+  periodEnd?: Date
 ): Promise<void> => {
 
-  // Load categories if not provided
   let allCategories = categories;
   if (allCategories.length === 0) {
     allCategories = await getAllCategories();
@@ -192,7 +207,6 @@ export const exportToPdf = async (
     const note = t.note.length > 20 ? t.note.substring(0, 18) + '..' : t.note;
     doc.text(note, 45, y + 4.5);
 
-    // Category badge with proper name lookup
     const { name: catName, color } = getCategoryInfo(t.category);
     const badgeLabel = catName.length > 9 ? catName.substring(0, 8) + '.' : catName.toUpperCase();
     doc.setFillColor(color[0], color[1], color[2]);
@@ -201,7 +215,6 @@ export const exportToPdf = async (
     doc.setFontSize(6);
     doc.text(badgeLabel, 109, y + 4.5, { align: 'center' });
 
-    // Account
     doc.setTextColor(100, 116, 139);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
@@ -209,7 +222,6 @@ export const exportToPdf = async (
     const accShort = accName.length > 11 ? accName.substring(0, 10) + '.' : accName;
     doc.text(accShort, 133, y + 4.5);
 
-    // Amount
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(
@@ -224,6 +236,145 @@ export const exportToPdf = async (
     doc.setFont('helvetica', 'normal');
     y += 9;
   });
+
+  // ── Savings Goals section ─────────────────────────────
+  if (savingsGoals.length > 0) {
+    y += 8;
+    checkNewPage(15);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Savings Goals', 14, y);
+    y += 8;
+
+    const completedThisPeriod: { name: string; days: number }[] = [];
+
+    savingsGoals.forEach((goal) => {
+      checkNewPage(20);
+
+      const pct = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
+      const isComplete = goal.currentAmount >= goal.targetAmount;
+
+      // Goal header bar
+      doc.setFillColor(31, 41, 55);
+      doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(goal.name, 18, y + 5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(156, 163, 175);
+      doc.text(
+        `${formatCurrency(goal.currentAmount, currency)} / ${formatCurrency(goal.targetAmount, currency)} (${pct.toFixed(0)}%)`,
+        pageWidth - 17, y + 5.5, { align: 'right' }
+      );
+      y += 9;
+
+      // progress bar
+      doc.setFillColor(55, 65, 81);
+      doc.roundedRect(14, y, pageWidth - 28, 2.5, 1, 1, 'F');
+      doc.setFillColor(16, 185, 129);
+      doc.roundedRect(14, y, (pageWidth - 28) * (pct / 100), 2.5, 1, 1, 'F');
+      y += 6;
+
+      // Activity within report period
+      const goalTx = savingsTransactions.filter((t) => t.goalId === goal.id);
+
+      if (periodStart && periodEnd) {
+        const periodTx = goalTx.filter((t) => {
+          const d = new Date(t.date);
+          return d >= periodStart && d <= periodEnd;
+        });
+
+        if (periodTx.length > 0) {
+          periodTx
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .forEach((tx) => {
+              checkNewPage(6);
+              doc.setFontSize(7.5);
+              doc.setTextColor(100, 116, 139);
+              const date = new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              doc.text(`  ${date}`, 18, y + 4);
+              doc.text(tx.note || (tx.type === 'deposit' ? 'Deposit' : 'Withdrawal'), 45, y + 4);
+              doc.setTextColor(
+                tx.type === 'deposit' ? 16 : 220,
+                tx.type === 'deposit' ? 185 : 38,
+                tx.type === 'deposit' ? 129 : 38
+              );
+              doc.setFont('helvetica', 'bold');
+              doc.text(
+                `${tx.type === 'deposit' ? '+' : '-'}${formatCurrency(tx.amount, currency)}`,
+                pageWidth - 17, y + 4, { align: 'right' }
+              );
+              doc.setFont('helvetica', 'normal');
+              y += 6;
+            });
+        }
+
+        // Check if goal was completed during this period
+        const sorted = [...goalTx].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        let cumulative = 0;
+        let completionDate: Date | null = null;
+        let cumulativeBeforePeriod = 0;
+
+        for (const tx of sorted) {
+          const d = new Date(tx.date);
+          const delta = tx.type === 'deposit' ? tx.amount : -tx.amount;
+          if (d < periodStart) cumulativeBeforePeriod += delta;
+          cumulative += delta;
+          if (!completionDate && cumulative >= goal.targetAmount) {
+            completionDate = d;
+          }
+        }
+
+        if (
+          completionDate &&
+          completionDate >= periodStart &&
+          completionDate <= periodEnd &&
+          cumulativeBeforePeriod < goal.targetAmount
+        ) {
+          const created = new Date(goal.createdAt);
+          const days = Math.round((completionDate.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+          completedThisPeriod.push({ name: goal.name, days });
+        }
+      }
+
+      if (isComplete) {
+        checkNewPage(6);
+        doc.setFontSize(7.5);
+        doc.setTextColor(16, 185, 129);
+        doc.text('  🎉 Goal reached', 18, y + 4);
+        y += 6;
+      }
+
+      y += 3;
+    });
+
+    // Goals completed this period
+    if (completedThisPeriod.length > 0) {
+      y += 4;
+      checkNewPage(10 + completedThisPeriod.length * 7);
+      doc.setFillColor(6, 78, 59);
+      doc.roundedRect(14, y, pageWidth - 28, 8, 2, 2, 'F');
+      doc.setTextColor(52, 211, 153);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('🎉 Goals Completed This Period', 18, y + 5.5);
+      y += 11;
+
+      completedThisPeriod.forEach((g) => {
+        checkNewPage(7);
+        doc.setFontSize(8);
+        doc.setTextColor(55, 65, 81);
+        doc.setFont('helvetica', 'normal');
+        doc.text(g.name, 18, y + 4);
+        doc.setTextColor(16, 185, 129);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Completed in ${formatDuration(g.days)}`, pageWidth - 17, y + 4, { align: 'right' });
+        y += 7;
+      });
+    }
+  }
 
   // Footer
   const totalPages = doc.getNumberOfPages();

@@ -4,6 +4,7 @@ import { getSetting, setSetting } from '../db/settings';
 import { getTransactionsByMonth } from '../db/transactions';
 import { getAllAccounts } from '../db/accounts';
 import { getAllCategories } from '../db/categories';
+import { getAllGoals, getAllSavingsTransactions } from '../db/savingsGoals';
 import { exportToPdf } from './exportPdf';
 
 export type ReportSchedule = 'monthly' | 'weekly' | 'off';
@@ -75,22 +76,30 @@ export const checkAndGenerateReport = async (currency: string): Promise<boolean>
 
     const now = new Date();
     let transactions: Awaited<ReturnType<typeof getTransactionsByMonth>>;
+    let periodStart: Date;
+    let periodEnd: Date;
 
     if (schedule === 'monthly') {
       const reportMonth = now.getMonth() === 0 ? 12 : now.getMonth();
       const reportYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
       transactions = await getTransactionsByMonth(reportYear, reportMonth);
+      periodStart = new Date(reportYear, reportMonth - 1, 1);
+      periodEnd = new Date(reportYear, reportMonth, 0, 23, 59, 59);
     } else {
       const allTx = await getTransactionsByMonth(now.getFullYear(), now.getMonth() + 1);
       const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       transactions = allTx.filter((t) => new Date(t.date) >= cutoff);
+      periodStart = cutoff;
+      periodEnd = now;
     }
 
     if (transactions.length === 0) return false;
 
     const accounts = await getAllAccounts();
     const cats = await getAllCategories();
-    await exportToPdf(transactions, currency, accounts, cats);
+    const goals = await getAllGoals();
+    const goalTx = await getAllSavingsTransactions();
+    await exportToPdf(transactions, currency, accounts, cats, goals, goalTx, periodStart, periodEnd);
     await setSetting(LAST_REPORT_KEY, now.toISOString());
 
     const label = schedule === 'monthly' ? 'Monthly' : 'Weekly';
@@ -112,23 +121,33 @@ export const generateManualReport = async (
 ): Promise<void> => {
   const now = new Date();
   let transactions: Awaited<ReturnType<typeof getTransactionsByMonth>>;
+  let periodStart: Date;
+  let periodEnd: Date;
 
   if (period === 'this_month') {
     transactions = await getTransactionsByMonth(now.getFullYear(), now.getMonth() + 1);
+    periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
   } else if (period === 'last_month') {
     const month = now.getMonth() === 0 ? 12 : now.getMonth();
     const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
     transactions = await getTransactionsByMonth(year, month);
+    periodStart = new Date(year, month - 1, 1);
+    periodEnd = new Date(year, month, 0, 23, 59, 59);
   } else {
     const allTx = await getTransactionsByMonth(now.getFullYear(), now.getMonth() + 1);
     const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     transactions = allTx.filter((t) => new Date(t.date) >= cutoff);
+    periodStart = cutoff;
+    periodEnd = now;
   }
 
   if (transactions.length === 0) throw new Error('No transactions found for this period');
 
   const accounts = await getAllAccounts();
   const cats = await getAllCategories();
-  await exportToPdf(transactions, currency, accounts, cats);
+  const goals = await getAllGoals();
+  const goalTx = await getAllSavingsTransactions();
+  await exportToPdf(transactions, currency, accounts, cats, goals, goalTx, periodStart, periodEnd);
   await setSetting(LAST_REPORT_KEY, now.toISOString());
 };

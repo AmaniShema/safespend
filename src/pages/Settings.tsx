@@ -10,6 +10,7 @@ import { CURRENCIES } from '../utils/currency';
 import { getAllTransactions } from '../db/transactions';
 import { getAllAccounts } from '../db/accounts';
 import { getAllCategories } from '../db/categories';
+import { getAllGoals, getAllSavingsTransactions } from '../db/savingsGoals';
 import { exportToPdf } from '../utils/exportPdf';
 import { exportBackup, importBackup } from '../utils/backup';
 import {
@@ -79,7 +80,9 @@ const Settings = () => {
       if (transactions.length === 0) { setExportMsg('No transactions to export'); return; }
       const accounts = await getAllAccounts();
       const cats = await getAllCategories();
-      await exportToPdf(transactions, currency, accounts, cats);
+      const goals = await getAllGoals();
+      const goalTx = await getAllSavingsTransactions();
+      await exportToPdf(transactions, currency, accounts, cats, goals, goalTx);
       setExportMsg('PDF exported successfully!');
     } catch {
       setExportMsg('Export failed. Try again.');
@@ -236,6 +239,23 @@ const Settings = () => {
                 <div className="text-left">
                   <p className="text-white text-sm">Set Total Budget</p>
                   <p className="text-gray-500 text-xs">Allocate budget across categories</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* Savings Goals */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Savings</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/savings-goals")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🎯</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Savings Goals</p>
+                  <p className="text-gray-500 text-xs">Set targets and track progress</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-gray-600" />
