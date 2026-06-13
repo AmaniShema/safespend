@@ -105,7 +105,7 @@ const EditTransaction = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -135,7 +135,7 @@ const EditTransaction = () => {
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: acc.color }} />
                     <span className="text-white text-sm">{acc.name}</span>
                   </div>
-                  {selectedAccountId === acc.id && <Check size={16} className="text-emerald-400" />}
+                  {selectedAccountId === acc.id && <Check size={16} className="text-white" />}
                 </button>
               ))}
             </div>
@@ -194,7 +194,7 @@ const EditTransaction = () => {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors ${
                   selectedCategory === cat.id
-                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+                    ? 'border-white bg-white/10 text-white'
                     : 'border-gray-800 bg-gray-900 text-gray-400'
                 }`}
               >
@@ -213,7 +213,7 @@ const EditTransaction = () => {
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-emerald-500 transition-colors"
+            className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-white transition-colors"
           />
           {lastPurchaseHint && (
             <div className="flex items-center gap-2 mt-2 px-1">
@@ -229,7 +229,7 @@ const EditTransaction = () => {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-emerald-500 transition-colors"
+            className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-white transition-colors"
           />
         </div>
       </div>
@@ -238,7 +238,7 @@ const EditTransaction = () => {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Check size={20} />
           {isSaving ? 'Saving...' : 'Update Transaction'}

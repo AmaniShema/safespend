@@ -65,7 +65,7 @@ const Accounts = () => {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-lg font-semibold">Accounts</h1>
-        <button onClick={() => setShowForm(true)} className="text-emerald-400">
+        <button onClick={() => setShowForm(true)} className="text-white">
           <Plus size={24} />
         </button>
       </div>
@@ -86,7 +86,7 @@ const Accounts = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. MTN Mobile Money"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-emerald-500 mb-4 placeholder-gray-600"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-white mb-4 placeholder-gray-600"
               autoFocus
             />
 
@@ -98,7 +98,7 @@ const Accounts = () => {
                   onClick={() => setType(t.value)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-colors ${
                     type === t.value
-                      ? 'border-emerald-500 bg-emerald-500/10'
+                      ? 'border-white bg-white/10'
                       : 'border-gray-700 bg-gray-800'
                   }`}
                 >
@@ -127,7 +127,7 @@ const Accounts = () => {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl disabled:opacity-50"
+              className="w-full bg-white text-black font-bold py-3.5 rounded-2xl disabled:opacity-50"
             >
               {isSaving ? 'Creating...' : 'Create Account'}
             </button>
