@@ -30,7 +30,7 @@ const HouseholdFundCard = ({ contributors, totalFund, currency }: HouseholdFundC
           </div>
           <button
             onClick={() => navigate('/household')}
-            className="flex items-center gap-1 text-emerald-400 text-xs"
+            className="flex items-center gap-1 text-white text-xs"
           >
             Manage <ChevronRight size={14} />
           </button>

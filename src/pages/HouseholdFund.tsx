@@ -78,7 +78,7 @@ const HouseholdFund = () => {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-lg font-semibold">Household Fund</h1>
-        <button onClick={openAddForm} className="text-emerald-400">
+        <button onClick={openAddForm} className="text-white">
           <Plus size={24} />
         </button>
       </div>
@@ -104,7 +104,7 @@ const HouseholdFund = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. SHEMA, Malik, Sam..."
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-emerald-500 mb-4 placeholder-gray-600"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-white mb-4 placeholder-gray-600"
                   autoFocus
                 />
               </>
@@ -128,7 +128,7 @@ const HouseholdFund = () => {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl disabled:opacity-50"
+              className="w-full bg-white text-black font-bold py-3.5 rounded-2xl disabled:opacity-50"
             >
               {isSaving ? 'Saving...' : editingContributor ? 'Save Changes' : 'Add Contributor'}
             </button>
@@ -172,12 +172,12 @@ const HouseholdFund = () => {
                         <p className="text-gray-500 text-xs">{pct.toFixed(0)}% of fund</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 text-sm font-semibold">
+                        <span className="text-white text-sm font-semibold">
                           {formatCurrency(c.amount, currency)}
                         </span>
                         <button
                           onClick={() => openEditForm(c)}
-                          className="text-gray-500 hover:text-emerald-400 transition-colors p-1.5 rounded-lg hover:bg-emerald-500/10"
+                          className="text-gray-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10"
                         >
                           <Pencil size={14} />
                         </button>
@@ -198,7 +198,7 @@ const HouseholdFund = () => {
                     </div>
                     <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2.5">
                       <div
-                        className="h-full bg-emerald-400 rounded-full"
+                        className="h-full bg-white rounded-full"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -247,7 +247,7 @@ const HouseholdFund = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => toggleStatus(c.id)}
-                      className="text-gray-500 hover:text-emerald-400 transition-colors p-1.5 rounded-lg hover:bg-emerald-500/10"
+                      className="text-gray-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10"
                       title="Mark as active again"
                     >
                       <UserCheck size={14} />
