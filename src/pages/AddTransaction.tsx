@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { X, Check, Clock, ChevronDown } from 'lucide-react';
 import { addTransaction } from '../db/transactions';
 import { getLastPurchase, TRACKED_CATEGORIES } from '../db/tracker';
@@ -15,10 +15,12 @@ const daysBetween = (dateStr: string): number => {
 
 const AddTransaction = () => {
   const navigate = useNavigate();
-  const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [amount, setAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('food');
-  const [note, setNote] = useState('');
+  const location = useLocation();
+  const prefill = (location.state as { prefillAmount?: number; prefillNote?: string; prefillType?: 'income' | 'expense' } | null) || null;
+  const [type, setType] = useState<'expense' | 'income'>(prefill?.prefillType || 'expense');
+  const [amount, setAmount] = useState(prefill?.prefillAmount ? String(prefill.prefillAmount) : '');
+  const [selectedCategory, setSelectedCategory] = useState<string>(prefill?.prefillType === 'income' ? 'salary' : 'food');
+  const [note, setNote] = useState(prefill?.prefillNote || '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');

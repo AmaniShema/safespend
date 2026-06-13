@@ -6,6 +6,7 @@ import TransactionList from '../components/TransactionList';
 import BudgetCard from '../components/BudgetCard';
 import TotalBudgetCard from '../components/TotalBudgetCard';
 import HouseholdFundCard from '../components/HouseholdFundCard';
+import MonthSummaryCard from '../components/MonthSummaryCard';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBudgets } from '../hooks/useBudgets';
 import { useCurrency } from '../hooks/useCurrency';
@@ -97,6 +98,12 @@ const Home = () => {
           currency={currency}
         />
       )}
+
+      <MonthSummaryCard
+        income={monthIncome}
+        expenses={monthExpenses}
+        currency={currency}
+      />
 
       <StatsRow
         dailyBudget={dailyBudget}

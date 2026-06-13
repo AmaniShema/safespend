@@ -5,6 +5,7 @@ import {
   addContributor,
   updateContributorAmount,
   toggleContributorStatus,
+  setContributorRecorded,
   deleteContributor,
   initHouseholdTable,
 } from '../db/household';
@@ -16,6 +17,7 @@ interface UseHouseholdReturn {
   addPerson: (data: { name: string; amount: number }) => Promise<void>;
   editAmount: (id: string, amount: number) => Promise<void>;
   toggleStatus: (id: string) => Promise<void>;
+  markRecorded: (id: string, recorded: boolean) => Promise<void>;
   removePerson: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -56,6 +58,11 @@ export const useHousehold = (): UseHouseholdReturn => {
     await refresh();
   };
 
+  const markRecorded = async (id: string, recorded: boolean): Promise<void> => {
+    await setContributorRecorded(id, recorded);
+    await refresh();
+  };
+
   const removePerson = async (id: string): Promise<void> => {
     await deleteContributor(id);
     await refresh();
@@ -65,5 +72,5 @@ export const useHousehold = (): UseHouseholdReturn => {
     .filter((c) => c.status === 'active')
     .reduce((sum, c) => sum + c.amount, 0);
 
-  return { contributors, totalFund, isLoading, addPerson, editAmount, toggleStatus, removePerson, refresh };
+  return { contributors, totalFund, isLoading, addPerson, editAmount, toggleStatus, markRecorded, removePerson, refresh };
 };

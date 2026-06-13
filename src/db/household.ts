@@ -5,6 +5,7 @@ export interface Contributor {
   name: string;
   amount: number;
   status: 'active' | 'left';
+  recorded: boolean;
   createdAt: string;
 }
 
@@ -15,7 +16,9 @@ const generateId = (): string =>
 
 const getLocal = (): Contributor[] => {
   const raw = localStorage.getItem(LOCAL_KEY);
-  return raw ? JSON.parse(raw) : [];
+  if (!raw) return [];
+  const parsed: Contributor[] = JSON.parse(raw);
+  return parsed.map((c) => ({ ...c, recorded: c.recorded ?? false }));
 };
 
 const saveLocal = (contributors: Contributor[]): void => {
@@ -31,9 +34,15 @@ export const initHouseholdTable = async (): Promise<void> => {
       name TEXT NOT NULL,
       amount REAL NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'active',
+      recorded INTEGER NOT NULL DEFAULT 0,
       createdAt TEXT NOT NULL
     )
   `);
+  try {
+    await db.execute(`ALTER TABLE household_contributors ADD COLUMN recorded INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    // Column already exists
+  }
 };
 
 export const getAllContributors = async (): Promise<Contributor[]> => {
@@ -46,6 +55,7 @@ export const getAllContributors = async (): Promise<Contributor[]> => {
       name: row.name as string,
       amount: row.amount as number,
       status: row.status as 'active' | 'left',
+      recorded: Boolean(row.recorded),
       createdAt: row.createdAt as string,
     }));
   } catch {
@@ -60,6 +70,7 @@ export const addContributor = async (
     ...data,
     id: generateId(),
     status: 'active',
+    recorded: false,
     createdAt: new Date().toISOString(),
   };
   if (!isNative()) {
@@ -68,8 +79,8 @@ export const addContributor = async (
   }
   const db = getDatabase();
   await db.run(
-    `INSERT INTO household_contributors (id, name, amount, status, createdAt)
-     VALUES (?, ?, ?, 'active', ?)`,
+    `INSERT INTO household_contributors (id, name, amount, status, recorded, createdAt)
+     VALUES (?, ?, ?, 'active', 0, ?)`,
     [contributor.id, contributor.name, contributor.amount, contributor.createdAt]
   );
   return contributor;
@@ -98,6 +109,15 @@ export const toggleContributorStatus = async (id: string): Promise<void> => {
   const current = (result.values?.[0]?.status as string) || 'active';
   const next = current === 'active' ? 'left' : 'active';
   await db.run('UPDATE household_contributors SET status = ? WHERE id = ?', [next, id]);
+};
+
+export const setContributorRecorded = async (id: string, recorded: boolean): Promise<void> => {
+  if (!isNative()) {
+    saveLocal(getLocal().map((c) => (c.id === id ? { ...c, recorded } : c)));
+    return;
+  }
+  const db = getDatabase();
+  await db.run('UPDATE household_contributors SET recorded = ? WHERE id = ?', [recorded ? 1 : 0, id]);
 };
 
 export const deleteContributor = async (id: string): Promise<void> => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Trash2, UserMinus, UserCheck, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, X, Trash2, UserMinus, UserCheck, Pencil, ArrowRightCircle, RotateCcw } from 'lucide-react';
 import { useHousehold } from '../hooks/useHousehold';
 import { useCurrency } from '../hooks/useCurrency';
 import { formatCurrency } from '../utils/currency';
@@ -8,7 +8,7 @@ import type { Contributor } from '../db/household';
 
 const HouseholdFund = () => {
   const navigate = useNavigate();
-  const { contributors, totalFund, addPerson, editAmount, toggleStatus, removePerson, isLoading } = useHousehold();
+  const { contributors, totalFund, addPerson, editAmount, toggleStatus, markRecorded, removePerson, isLoading } = useHousehold();
   const { currency } = useCurrency();
   const [showForm, setShowForm] = useState(false);
   const [editingContributor, setEditingContributor] = useState<Contributor | null>(null);
@@ -55,6 +55,17 @@ const HouseholdFund = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleRecordAsIncome = async (c: Contributor) => {
+    await markRecorded(c.id, true);
+    navigate('/add', {
+      state: {
+        prefillAmount: c.amount,
+        prefillNote: `Household contribution — ${c.name}`,
+        prefillType: 'income',
+      },
+    });
   };
 
   const activeContributors = contributors.filter((c) => c.status === 'active');
@@ -185,12 +196,34 @@ const HouseholdFund = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2.5">
                       <div
                         className="h-full bg-emerald-400 rounded-full"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
+
+                    {/* Record as income action */}
+                    {c.recorded ? (
+                      <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+                        <span className="text-emerald-400 text-xs">✓ Recorded as income</span>
+                        <button
+                          onClick={() => markRecorded(c.id, false)}
+                          className="flex items-center gap-1 text-gray-500 hover:text-gray-300 text-xs"
+                        >
+                          <RotateCcw size={12} />
+                          Undo
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleRecordAsIncome(c)}
+                        className="w-full flex items-center justify-center gap-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium py-2 rounded-lg hover:bg-blue-500/20 transition-colors"
+                      >
+                        <ArrowRightCircle size={13} />
+                        Record as income
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -233,7 +266,7 @@ const HouseholdFund = () => {
         )}
 
         <p className="text-gray-600 text-xs px-1">
-          💡 Mark someone as "left" if they stop contributing — the total fund updates automatically. You can mark them active again anytime.
+          💡 "Record as income" creates a real transaction so this money counts toward your balance and reports. Mark someone "left" if they stop contributing — the total fund updates automatically.
         </p>
       </div>
     </div>
