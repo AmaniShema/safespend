@@ -19,19 +19,17 @@ const BottomNav = () => {
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = location.pathname === path;
           const isAdd = label === 'Add';
-
           if (isAdd) {
             return (
               <button
                 key={path}
                 onClick={() => navigate(path)}
-                className="bg-emerald-500 rounded-full p-4 -mt-6 shadow-lg shadow-emerald-500/30"
+                className="bg-white rounded-full p-4 -mt-6 shadow-lg shadow-white/20"
               >
-                <Icon size={22} className="text-white" />
+                <Icon size={22} className="text-black" />
               </button>
             );
           }
-
           return (
             <button
               key={path}
@@ -40,10 +38,10 @@ const BottomNav = () => {
             >
               <Icon
                 size={20}
-                className={isActive ? 'text-emerald-400' : 'text-gray-500'}
+                className={isActive ? 'text-white' : 'text-gray-500'}
               />
               <span
-                className={`text-xs ${isActive ? 'text-emerald-400' : 'text-gray-500'}`}
+                className={`text-xs ${isActive ? 'text-white' : 'text-gray-500'}`}
               >
                 {label}
               </span>

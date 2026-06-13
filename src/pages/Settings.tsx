@@ -178,7 +178,7 @@ const Settings = () => {
                       <p className="text-gray-400 text-xs">{c.name}</p>
                     </div>
                   </div>
-                  {currency === c.code && <Check size={16} className="text-emerald-400" />}
+                  {currency === c.code && <Check size={16} className="text-white" />}
                 </button>
               ))}
             </div>
@@ -200,7 +200,7 @@ const Settings = () => {
                     <p className="text-white text-sm font-medium">{opt.label}</p>
                     <p className="text-gray-400 text-xs mt-0.5">{opt.desc}</p>
                   </div>
-                  {schedule === opt.value && <Check size={16} className="text-emerald-400 flex-shrink-0" />}
+                  {schedule === opt.value && <Check size={16} className="text-white flex-shrink-0" />}
                 </button>
               ))}
             </div>
@@ -345,7 +345,7 @@ const Settings = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-emerald-400 text-sm">{selectedSchedule?.label}</span>
+                <span className="text-white text-sm">{selectedSchedule?.label}</span>
                 <ChevronRight size={16} className="text-gray-600" />
               </div>
             </button>
@@ -373,7 +373,7 @@ const Settings = () => {
             </button>
           </div>
           {exportMsg && (
-            <p className={`text-xs mt-2 px-1 ${exportMsg.includes('fail') || exportMsg.includes('No') ? 'text-red-400' : 'text-emerald-400'}`}>
+            <p className={`text-xs mt-2 px-1 ${exportMsg.includes('fail') || exportMsg.includes('No') ? 'text-red-400' : 'text-white'}`}>
               {exportMsg}
             </p>
           )}
@@ -386,7 +386,7 @@ const Settings = () => {
             <button onClick={handleExportBackup} disabled={isExporting}
               className="w-full flex items-center justify-between p-4 border-b border-gray-800 disabled:opacity-50">
               <div className="flex items-center gap-3">
-                <Download size={18} className="text-emerald-400" />
+                <Download size={18} className="text-white" />
                 <div className="text-left">
                   <p className="text-white text-sm">Export JSON Backup</p>
                   <p className="text-gray-500 text-xs">Save all data for recovery</p>
@@ -407,7 +407,7 @@ const Settings = () => {
             </button>
           </div>
           {importMsg && (
-            <div className={`flex items-start gap-2 mt-2 px-1 ${importError ? 'text-red-400' : 'text-emerald-400'}`}>
+            <div className={`flex items-start gap-2 mt-2 px-1 ${importError ? 'text-red-400' : 'text-white'}`}>
               {importError && <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />}
               <p className="text-xs">{importMsg}</p>
             </div>
@@ -446,7 +446,7 @@ const Settings = () => {
                   <p className="text-gray-500 text-xs mt-0.5">Switch app appearance</p>
                 </div>
               </div>
-              <button onClick={toggleTheme} className={"w-12 h-6 rounded-full transition-colors relative " + (theme === "light" ? "bg-emerald-500" : "bg-gray-700")}>
+              <button onClick={toggleTheme} className={"w-12 h-6 rounded-full transition-colors relative " + (theme === "light" ? "bg-gray-400" : "bg-gray-700")}>
                 <div className={"absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform " + (theme === "light" ? "translate-x-6" : "translate-x-0.5")} />
               </button>
             </div>
@@ -471,7 +471,7 @@ const Settings = () => {
                   await setBiometricEnabled(next);
                   setBiometricState(next);
                 }}
-                className={`w-12 h-6 rounded-full transition-colors relative ${biometricEnabled ? 'bg-emerald-500' : 'bg-gray-700'} disabled:opacity-40`}
+                className={`w-12 h-6 rounded-full transition-colors relative ${biometricEnabled ? 'bg-gray-400' : 'bg-gray-700'} disabled:opacity-40`}
               >
                 <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${biometricEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
               </button>
@@ -484,17 +484,17 @@ const Settings = () => {
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Privacy</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
             <div className="flex items-center gap-3 mb-3">
-              <Shield size={18} className="text-emerald-400" />
+              <Shield size={18} className="text-white" />
               <span className="text-white text-sm font-medium">Privacy Dashboard</span>
             </div>
             <div className="flex gap-3">
               <div className="flex-1 bg-gray-800 rounded-xl p-3">
                 <p className="text-gray-500 text-xs uppercase">Storage</p>
-                <p className="text-emerald-400 text-sm font-bold mt-1">100% Offline</p>
+                <p className="text-white text-sm font-bold mt-1">100% Offline</p>
               </div>
               <div className="flex-1 bg-gray-800 rounded-xl p-3">
                 <p className="text-gray-500 text-xs uppercase">Exposure</p>
-                <p className="text-emerald-400 text-sm font-bold mt-1">0% Cloud</p>
+                <p className="text-white text-sm font-bold mt-1">0% Cloud</p>
               </div>
             </div>
           </div>
