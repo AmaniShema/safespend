@@ -47,7 +47,7 @@ const SavingsGoals = () => {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-lg font-semibold">Savings Goals</h1>
-        <button onClick={() => setShowForm(true)} className="text-emerald-400">
+        <button onClick={() => setShowForm(true)} className="text-white">
           <Plus size={24} />
         </button>
       </div>
@@ -68,7 +68,7 @@ const SavingsGoals = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. New Phone, Emergency Fund..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-emerald-500 mb-4 placeholder-gray-600"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-white mb-4 placeholder-gray-600"
               autoFocus
             />
 
@@ -91,7 +91,7 @@ const SavingsGoals = () => {
                   key={e}
                   onClick={() => setEmoji(e)}
                   className={`text-xl p-2 rounded-xl transition-colors ${
-                    emoji === e ? 'bg-emerald-500/20 border border-emerald-500' : 'bg-gray-800'
+                    emoji === e ? 'bg-white/20 border border-white' : 'bg-gray-800'
                   }`}
                 >
                   {e}
@@ -118,7 +118,7 @@ const SavingsGoals = () => {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl disabled:opacity-50"
+              className="w-full bg-white text-black font-bold py-3.5 rounded-2xl disabled:opacity-50"
             >
               {isSaving ? 'Creating...' : 'Create Goal'}
             </button>

@@ -113,7 +113,7 @@ const SavingsGoalDetail = () => {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="e.g. Salary savings, phone purchase..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-emerald-500 mb-4 placeholder-gray-600"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-white mb-4 placeholder-gray-600"
             />
 
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
@@ -154,7 +154,7 @@ const SavingsGoalDetail = () => {
           <div className="flex justify-between mt-2 text-xs">
             <span className="text-gray-500">{pct.toFixed(0)}% complete</span>
             {isComplete ? (
-              <span className="text-emerald-400">🎉 Goal reached!</span>
+              <span className="text-white">🎉 Goal reached!</span>
             ) : (
               <span className="text-gray-500">{formatCurrency(remaining, currency)} to go</span>
             )}
