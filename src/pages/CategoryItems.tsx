@@ -89,7 +89,7 @@ const CategoryItems = () => {
           <span className="text-xl">{category.emoji}</span>
           <h1 className="text-lg font-semibold">{category.name}</h1>
         </div>
-        <button onClick={() => setShowForm(true)} className="text-emerald-400">
+        <button onClick={() => setShowForm(true)} className="text-white">
           <Plus size={24} />
         </button>
       </div>
@@ -111,7 +111,7 @@ const CategoryItems = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Rice, Salt, Cooking Gas..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-emerald-500 mb-4 placeholder-gray-600"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-white mb-4 placeholder-gray-600"
               autoFocus
             />
 
@@ -132,7 +132,7 @@ const CategoryItems = () => {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl disabled:opacity-50"
+              className="w-full bg-white text-black font-bold py-3.5 rounded-2xl disabled:opacity-50"
             >
               {isSaving ? 'Saving...' : 'Add Item'}
             </button>
@@ -156,7 +156,7 @@ const CategoryItems = () => {
           {totalPlanned > 0 && (
             <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${totalSpent > totalPlanned ? 'bg-red-400' : 'bg-emerald-400'}`}
+                className={`h-full rounded-full ${totalSpent > totalPlanned ? 'bg-red-400' : 'bg-white'}`}
                 style={{ width: `${Math.min((totalSpent / totalPlanned) * 100, 100)}%` }}
               />
             </div>
@@ -211,7 +211,7 @@ const CategoryItems = () => {
                     <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${
-                          isOver ? 'bg-red-400' : isWarn ? 'bg-yellow-400' : 'bg-emerald-400'
+                          isOver ? 'bg-red-400' : isWarn ? 'bg-yellow-400' : 'bg-white'
                         }`}
                         style={{ width: `${pct}%` }}
                       />
