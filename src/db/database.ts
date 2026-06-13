@@ -83,6 +83,7 @@ export const initDatabase = async (): Promise<void> => {
     } catch {
       // Column already exists
     }
+    await db.execute(`CREATE TABLE IF NOT EXISTS recurring_transactions (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, amount REAL NOT NULL, type TEXT NOT NULL, category TEXT NOT NULL, accountId TEXT NOT NULL DEFAULT 'default', frequency TEXT NOT NULL, nextDueDate TEXT NOT NULL, isActive INTEGER NOT NULL DEFAULT 1, createdAt TEXT NOT NULL)`);
     console.log('SQLite database initialized');
   } catch (error) {
     console.error('Database initialization failed:', error);
