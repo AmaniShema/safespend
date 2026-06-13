@@ -127,7 +127,7 @@ const Home = () => {
         <div className="mx-4 mt-4">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-white font-semibold">Budget Alerts</h3>
-            <button onClick={() => navigate('/budgets')} className="text-emerald-400 text-sm">
+            <button onClick={() => navigate('/budgets')} className="text-white text-sm">
               Manage
             </button>
           </div>

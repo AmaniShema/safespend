@@ -133,7 +133,7 @@ const TransactionList = ({
                 }}
                 className="w-full flex items-center gap-3 p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors"
               >
-                <Pencil size={18} className="text-emerald-400" />
+                <Pencil size={18} className="text-white" />
                 <span className="text-white text-sm font-medium">Edit Transaction</span>
               </button>
 
@@ -187,7 +187,7 @@ const TransactionList = ({
         <h3 className="text-white font-semibold">Recent Transactions</h3>
         <button
           onClick={() => navigate('/transactions')}
-          className="text-emerald-400 text-sm"
+          className="text-white text-sm"
         >
           View All
         </button>

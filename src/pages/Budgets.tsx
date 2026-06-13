@@ -58,7 +58,7 @@ const Budgets = () => {
         <h1 className="text-lg font-semibold">Budget Limits</h1>
         <button
           onClick={() => setShowForm(true)}
-          className="text-emerald-400"
+          className="text-white"
         >
           <Plus size={24} />
         </button>
@@ -81,7 +81,7 @@ const Budgets = () => {
                 onClick={() => setPeriod('monthly')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                   period === 'monthly'
-                    ? 'bg-emerald-500/20 text-emerald-400'
+                    ? 'bg-white/20 text-white'
                     : 'text-gray-500'
                 }`}
               >
@@ -91,7 +91,7 @@ const Budgets = () => {
                 onClick={() => setPeriod('weekly')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                   period === 'weekly'
-                    ? 'bg-emerald-500/20 text-emerald-400'
+                    ? 'bg-white/20 text-white'
                     : 'text-gray-500'
                 }`}
               >
@@ -108,7 +108,7 @@ const Budgets = () => {
                   onClick={() => setCategory(cat.value)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-colors ${
                     category === cat.value
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+                      ? 'border-white bg-white/10 text-white'
                       : 'border-gray-700 bg-gray-800 text-gray-400'
                   }`}
                 >
@@ -137,7 +137,7 @@ const Budgets = () => {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl disabled:opacity-50"
+              className="w-full bg-white text-black font-bold py-3.5 rounded-2xl disabled:opacity-50"
             >
               {isSaving ? 'Saving...' : 'Save Budget'}
             </button>

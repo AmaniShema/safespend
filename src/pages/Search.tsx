@@ -63,7 +63,7 @@ const Search = () => {
               onClick={() => setActiveFilter(filter)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 activeFilter === filter
-                  ? 'bg-emerald-500 text-white'
+                  ? 'bg-white text-black'
                   : 'bg-gray-900 text-gray-400 border border-gray-800'
               }`}
             >
