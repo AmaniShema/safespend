@@ -69,7 +69,7 @@ const TotalBudgetCard = ({
           </div>
           <button
             onClick={() => navigate('/total-budget')}
-            className="flex items-center gap-1 text-emerald-400 text-xs"
+            className="flex items-center gap-1 text-white text-xs"
           >
             Edit <ChevronRight size={14} />
           </button>
@@ -107,7 +107,7 @@ const TotalBudgetCard = ({
           <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
-                isOverTotal ? 'bg-red-400' : totalPercent >= 75 ? 'bg-yellow-400' : 'bg-emerald-400'
+                isOverTotal ? 'bg-red-400' : totalPercent >= 75 ? 'bg-yellow-400' : 'bg-white'
               }`}
               style={{ width: `${totalPercent}%` }}
             />
@@ -148,7 +148,7 @@ const TotalBudgetCard = ({
                   <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${
-                        isOver ? 'bg-red-400' : isWarn ? 'bg-yellow-400' : 'bg-emerald-400'
+                        isOver ? 'bg-red-400' : isWarn ? 'bg-yellow-400' : 'bg-white'
                       }`}
                       style={{ width: `${pct}%` }}
                     />

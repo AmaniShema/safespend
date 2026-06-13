@@ -114,7 +114,7 @@ const TotalBudget = () => {
             <button
               onClick={() => setPeriod('monthly')}
               className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                period === 'monthly' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500'
+                period === 'monthly' ? 'bg-white/20 text-white' : 'text-gray-500'
               }`}
             >
               Monthly
@@ -122,7 +122,7 @@ const TotalBudget = () => {
             <button
               onClick={() => setPeriod('weekly')}
               className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                period === 'weekly' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500'
+                period === 'weekly' ? 'bg-white/20 text-white' : 'text-gray-500'
               }`}
             >
               Weekly
@@ -160,7 +160,7 @@ const TotalBudget = () => {
             </div>
             <div className="flex justify-between mb-3">
               <span className="text-gray-400 text-sm">Unallocated</span>
-              <span className={`font-bold ${unallocated < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+              <span className={`font-bold ${unallocated < 0 ? 'text-red-400' : 'text-white'}`}>
                 {formatCurrency(Math.abs(unallocated), currency)}
                 {unallocated < 0 ? ' over' : ' free'}
               </span>
@@ -168,7 +168,7 @@ const TotalBudget = () => {
             <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
-                  isOverAllocated ? 'bg-red-400' : 'bg-emerald-400'
+                  isOverAllocated ? 'bg-red-400' : 'bg-white'
                 }`}
                 style={{ width: `${Math.min((allocatedTotal / totalAmount) * 100, 100)}%` }}
               />
@@ -183,7 +183,7 @@ const TotalBudget = () => {
             {unallocatedCategories.length > 0 && totalAmount > 0 && (
               <button
                 onClick={() => setShowAddAllocation(true)}
-                className="flex items-center gap-1 text-emerald-400 text-sm"
+                className="flex items-center gap-1 text-white text-sm"
               >
                 <Plus size={16} />
                 Add
@@ -223,7 +223,7 @@ const TotalBudget = () => {
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-emerald-400 rounded-full"
+                          className="h-full bg-white rounded-full"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -250,7 +250,7 @@ const TotalBudget = () => {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-colors ${
                       selectedCategory === cat.id
-                        ? 'border-emerald-500 bg-emerald-500/10'
+                        ? 'border-white bg-white/10'
                         : 'border-gray-700 bg-gray-800'
                     }`}
                   >
@@ -293,7 +293,7 @@ const TotalBudget = () => {
                 </button>
                 <button
                   onClick={handleAddAllocation}
-                  className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl"
+                  className="flex-1 py-3 bg-white text-black font-bold rounded-xl"
                 >
                   Add
                 </button>
@@ -309,7 +309,7 @@ const TotalBudget = () => {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl disabled:opacity-50"
+          className="w-full bg-white text-black font-bold py-4 rounded-2xl disabled:opacity-50"
         >
           {isSaving ? 'Saving...' : 'Save Budget'}
         </button>
