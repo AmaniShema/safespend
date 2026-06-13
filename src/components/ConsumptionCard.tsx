@@ -22,7 +22,7 @@ const getUrgencyColor = (
   const ratio = daysSince / averageDays;
   if (ratio >= 1) return 'text-red-400';
   if (ratio >= 0.75) return 'text-yellow-400';
-  return 'text-emerald-400';
+  return 'text-white';
 };
 
 const formatDate = (dateStr: string): string =>
@@ -126,7 +126,7 @@ const ConsumptionCard = ({ record, currency }: ConsumptionCardProps) => {
                   ? 'bg-red-400'
                   : record.daysSinceLastPurchase / record.averageDays >= 0.75
                   ? 'bg-yellow-400'
-                  : 'bg-emerald-400'
+                  : 'bg-white'
               }`}
               style={{
                 width: `${Math.min(

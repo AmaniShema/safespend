@@ -26,8 +26,8 @@ const BalanceCard = ({
           </h2>
         </div>
         <div className="flex items-center gap-1 bg-gray-800 rounded-full px-3 py-1">
-          <Shield size={12} className="text-emerald-400" />
-          <span className="text-emerald-400 text-xs font-medium">Offline</span>
+          <Shield size={12} className="text-white" />
+          <span className="text-white text-xs font-medium">Offline</span>
         </div>
       </div>
 

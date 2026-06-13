@@ -52,8 +52,8 @@ const LockScreen = ({ onUnlock }: LockScreenProps) => {
   return (
     <div className="fixed inset-0 bg-gray-950 flex flex-col items-center justify-center z-[999] px-8">
       <div className="mb-12 text-center">
-        <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
-          <Shield size={40} className="text-emerald-400" />
+        <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-white/20">
+          <Shield size={40} className="text-white" />
         </div>
         <h1 className="text-2xl font-bold text-white">SafeSpend</h1>
         <p className="text-gray-400 text-sm mt-1">Authentication required</p>
@@ -64,19 +64,19 @@ const LockScreen = ({ onUnlock }: LockScreenProps) => {
         disabled={isAuthenticating || attempts >= 3}
         className={`w-32 h-32 rounded-full flex flex-col items-center justify-center gap-3 border-2 transition-all ${
           isAuthenticating
-            ? 'border-emerald-400 bg-emerald-500/20 scale-95'
+            ? 'border-white bg-white/20 scale-95'
             : attempts >= 3
             ? 'border-gray-700 bg-gray-900 opacity-50'
-            : 'border-emerald-500/50 bg-emerald-500/10 active:scale-95'
+            : 'border-white/50 bg-white/10 active:scale-95'
         }`}
       >
         <Fingerprint
           size={48}
           className={
-            isAuthenticating ? 'text-emerald-400 animate-pulse' : 'text-emerald-400'
+            isAuthenticating ? 'text-white animate-pulse' : 'text-white'
           }
         />
-        <span className="text-emerald-400 text-xs font-medium">
+        <span className="text-white text-xs font-medium">
           {isAuthenticating ? 'Verifying...' : 'Tap to retry'}
         </span>
       </button>
