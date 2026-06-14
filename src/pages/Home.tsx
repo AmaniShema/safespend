@@ -7,7 +7,7 @@ import BudgetCard from '../components/BudgetCard';
 import TotalBudgetCard from '../components/TotalBudgetCard';
 import HouseholdFundCard from '../components/HouseholdFundCard';
 import MonthSummaryCard from '../components/MonthSummaryCard';
-import RecurringDueCard from '../components/RecurringDueCard';
+import DueNowCard from '../components/DueNowCard';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBudgets } from '../hooks/useBudgets';
 import { useCurrency } from '../hooks/useCurrency';
@@ -38,6 +38,19 @@ const Home = () => {
   const todayStr = now.toDateString();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
+  const topCategoryId = transactions.length > 0
+    ? Object.entries(
+        transactions
+          .filter((t) => t.type === 'expense')
+          .reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+          }, {} as Record<string, number>)
+      ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
+    : 'N/A';
+
+  const topCategoryName = categoryMap[topCategoryId]?.name || topCategoryId;
+
   let dailyBudget = 0;
   if (totalBudget) {
     dailyBudget = totalBudget.period === 'monthly'
@@ -59,19 +72,6 @@ const Home = () => {
   const savingsPercent = hasIncome
     ? Math.round(((monthIncome - monthExpenses) / monthIncome) * 100)
     : 0;
-
-  const topCategoryId = transactions.length > 0
-    ? Object.entries(
-        transactions
-          .filter((t) => t.type === 'expense')
-          .reduce((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
-            return acc;
-          }, {} as Record<string, number>)
-      ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A'
-    : 'N/A';
-
-  const topCategoryName = categoryMap[topCategoryId]?.name || topCategoryId;
 
   const handleAddNow = async (item: RecurringTransaction) => {
     await markAdded(item.id);
@@ -124,7 +124,7 @@ const Home = () => {
       />
 
       {dueItems.length > 0 && (
-        <RecurringDueCard
+        <DueNowCard
           dueItems={dueItems}
           currency={currency}
           onAddNow={handleAddNow}

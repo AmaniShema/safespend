@@ -246,9 +246,43 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Debt Tracker */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Debts</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/debts")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">💸</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Debt Tracker</p>
+                  <p className="text-gray-500 text-xs">IOUs, loans, repayments</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+
         {/* Recurring Transactions */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Recurring</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/recurring")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🔁</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Recurring Transactions</p>
+                  <p className="text-gray-500 text-xs">Rent, salary, subscriptions</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* Recurring Transactions */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Automation</p>
           <div className="bg-gray-900 rounded-2xl border border-gray-800">
             <button onClick={() => navigate("/recurring")} className="w-full flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
