@@ -57,6 +57,7 @@ const DebtTracker = () => {
     setPayError('');
     try {
       await makePayment(payingDebt.id, parsed, payNote.trim());
+      setPayments((prev) => { const next = { ...prev }; delete next[payingDebt.id]; return next; });
       setPayingDebt(null);
       setPayAmount('');
       setPayNote('');
