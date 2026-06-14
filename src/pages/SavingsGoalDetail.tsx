@@ -17,6 +17,7 @@ const SavingsGoalDetail = () => {
   const [note, setNote] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const load = async () => {
     if (!id) return;
@@ -25,7 +26,7 @@ const SavingsGoalDetail = () => {
     setTransactions(tx);
   };
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { load(); }, [id, refreshKey]);
 
   if (!goal) return null;
 
@@ -47,6 +48,7 @@ const SavingsGoalDetail = () => {
       setAmount('');
       setNote('');
       setShowForm(null);
+      setRefreshKey((k) => k + 1);
       await load();
     } catch {
       setError('Failed to save');
