@@ -16,7 +16,7 @@ export const formatCurrency = (
   if (!currency) return `${amount.toLocaleString()}`;
 
   if (currencyCode === 'RWF') {
-    return `RF ${Math.round(amount).toLocaleString('en-US')}`;
+    return `RWF ${Math.round(amount).toLocaleString('en-US')}`;
   }
 
   return new Intl.NumberFormat('en-US', {

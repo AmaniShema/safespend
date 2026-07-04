@@ -1,7 +1,7 @@
 import type { Transaction } from '../types';
 import { getAllTransactions } from './transactions';
 
-export const TRACKED_CATEGORIES = ['food', 'health', 'rent', 'other'];
+export const TRACKED_CATEGORIES = ['food', 'health'];
 
 export interface ConsumptionRecord {
   itemName: string;
