@@ -101,7 +101,9 @@ export const exportBackup = async (): Promise<void> => {
       dialogTitle: 'Save your backup file',
     });
   } else {
-    const blob = new Blob([json], { type: 'application/json' });
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(json);
+    const blob = new Blob([bytes], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
