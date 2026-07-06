@@ -7,32 +7,42 @@ import { getAllCategories, createCategory } from '../db/categories';
 import { getAllBudgets, upsertBudget } from '../db/budgets';
 import { getAllBudgetItems, addBudgetItem } from '../db/budgetItems';
 import { getTotalBudget, saveTotalBudget } from '../db/totalBudget';
-import { getAllGoals, getAllSavingsTransactions, createGoal, addGoalTransaction } from '../db/savingsGoals';
-import { getAllRecurring, createRecurring } from '../db/recurringTransactions';
-import { getAllDebts, getDebtPayments, createDebt, recordDebtPayment } from '../db/debts';
-import { getAllMembers, getAllContributions, addMember, addContribution } from '../db/household';
+import { getAllGoals, getAllSavingsTransactions, createGoal, addGoalTransaction, initSavingsTables } from '../db/savingsGoals';
+import { getAllRecurring, createRecurring, initRecurringTable } from '../db/recurringTransactions';
+import { getAllDebts, getDebtPayments, createDebt, recordDebtPayment, initDebtTables } from '../db/debts';
+import { getAllMembers, getAllContributions, addMember, addContribution, initHouseholdTable } from '../db/household';
 import { getSetting, setSetting } from '../db/settings';
 
 const SETTINGS_KEYS = ['currency', 'report_schedule', 'biometric_enabled', 'theme'];
 
 export const createBackup = async (): Promise<string> => {
+  // Ensure all tables exist before reading
+  try { await initHouseholdTable(); } catch { /* already exists */ }
+  try { await initSavingsTables(); } catch { /* already exists */ }
+  try { await initRecurringTable(); } catch { /* already exists */ }
+  try { await initDebtTables(); } catch { /* already exists */ }
+
+  const safeGet = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+    try { return await fn(); } catch { return fallback; }
+  };
+
   const [
     transactions, accounts, categories, budgets, budgetItems, totalBudget,
     savingsGoals, savingsTransactions, recurring, debts,
     householdMembers, householdContributions,
   ] = await Promise.all([
-    getAllTransactions(),
-    getAllAccounts(),
-    getAllCategories(),
-    getAllBudgets(),
-    getAllBudgetItems(),
-    getTotalBudget(),
-    getAllGoals(),
-    getAllSavingsTransactions(),
-    getAllRecurring(),
-    getAllDebts(),
-    getAllMembers(),
-    getAllContributions(),
+    safeGet(getAllTransactions, []),
+    safeGet(getAllAccounts, []),
+    safeGet(getAllCategories, []),
+    safeGet(getAllBudgets, []),
+    safeGet(getAllBudgetItems, []),
+    safeGet(getTotalBudget, null),
+    safeGet(getAllGoals, []),
+    safeGet(getAllSavingsTransactions, []),
+    safeGet(getAllRecurring, []),
+    safeGet(getAllDebts, []),
+    safeGet(getAllMembers, []),
+    safeGet(getAllContributions, []),
   ]);
 
   // Get debt payments for all debts
