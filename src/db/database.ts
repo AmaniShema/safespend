@@ -86,6 +86,8 @@ export const initDatabase = async (): Promise<void> => {
     await db.execute(`CREATE TABLE IF NOT EXISTS recurring_transactions (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, amount REAL NOT NULL, type TEXT NOT NULL, category TEXT NOT NULL, accountId TEXT NOT NULL DEFAULT 'default', frequency TEXT NOT NULL, nextDueDate TEXT NOT NULL, isActive INTEGER NOT NULL DEFAULT 1, createdAt TEXT NOT NULL)`);
     await db.execute(`CREATE TABLE IF NOT EXISTS debts (id TEXT PRIMARY KEY NOT NULL, personName TEXT NOT NULL, originalAmount REAL NOT NULL, remainingAmount REAL NOT NULL, direction TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', isSettled INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL)`);
     await db.execute(`CREATE TABLE IF NOT EXISTS debt_payments (id TEXT PRIMARY KEY NOT NULL, debtId TEXT NOT NULL, amount REAL NOT NULL, note TEXT NOT NULL DEFAULT '', date TEXT NOT NULL)`);
+    await db.execute(`CREATE TABLE IF NOT EXISTS household_members (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active', createdAt TEXT NOT NULL)`);
+    await db.execute(`CREATE TABLE IF NOT EXISTS household_contributions (id TEXT PRIMARY KEY NOT NULL, contributorId TEXT NOT NULL, amount REAL NOT NULL DEFAULT 0, month TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', recorded INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL)`);
     console.log('SQLite database initialized');
   } catch (error) {
     console.error('Database initialization failed:', error);

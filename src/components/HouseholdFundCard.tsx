@@ -1,17 +1,23 @@
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Users } from 'lucide-react';
-import type { Contributor } from '../db/household';
+import type { Contributor, HouseholdContribution } from '../db/household';
 import { formatCurrency } from '../utils/currency';
+import { formatMonth, getCurrentMonth } from '../db/household';
 
 interface HouseholdFundCardProps {
-  contributors: Contributor[];
+  members: Contributor[];
+  contributions: HouseholdContribution[];
   totalFund: number;
   currency: string;
 }
 
-const HouseholdFundCard = ({ contributors, totalFund, currency }: HouseholdFundCardProps) => {
+const HouseholdFundCard = ({ members, contributions, totalFund, currency }: HouseholdFundCardProps) => {
   const navigate = useNavigate();
-  const active = contributors.filter((c) => c.status === 'active');
+  const currentMonth = getCurrentMonth();
+  const active = members.filter((m) => m.status === 'active');
+
+  const getCurrentContrib = (memberId: string) =>
+    contributions.find((c) => c.contributorId === memberId && c.month === currentMonth);
 
   return (
     <div className="mx-4 mt-4">
@@ -23,9 +29,7 @@ const HouseholdFundCard = ({ contributors, totalFund, currency }: HouseholdFundC
             </div>
             <div>
               <p className="text-white font-semibold text-sm">Household Fund</p>
-              <p className="text-gray-500 text-xs">
-                {active.length} contributor{active.length !== 1 ? 's' : ''}
-              </p>
+              <p className="text-gray-500 text-xs">{formatMonth(currentMonth)}</p>
             </div>
           </div>
           <button
@@ -41,17 +45,14 @@ const HouseholdFundCard = ({ contributors, totalFund, currency }: HouseholdFundC
         </p>
 
         <div className="space-y-1.5">
-          {active.map((c) => {
-            const pct = totalFund > 0 ? (c.amount / totalFund) * 100 : 0;
+          {active.map((m) => {
+            const contrib = getCurrentContrib(m.id);
             return (
-              <div key={c.id} className="flex items-center justify-between text-xs">
-                <span className="text-gray-400">{c.name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500">{pct.toFixed(0)}%</span>
-                  <span className="text-gray-300 font-medium">
-                    {formatCurrency(c.amount, currency)}
-                  </span>
-                </div>
+              <div key={m.id} className="flex items-center justify-between text-xs">
+                <span className="text-gray-400">{m.name}</span>
+                <span className={contrib ? 'text-gray-300 font-medium' : 'text-gray-600'}>
+                  {contrib ? formatCurrency(contrib.amount, currency) : 'Not added yet'}
+                </span>
               </div>
             );
           })}

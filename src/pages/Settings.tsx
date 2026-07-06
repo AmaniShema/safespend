@@ -131,7 +131,7 @@ const Settings = () => {
       const text = await file.text();
       const result = await importBackup(text);
       setImportMsg(
-        `Restored: ${result.transactions} transactions, ${result.accounts} accounts, ${result.categories} categories`
+        `Restored: ${result.transactions} transactions, ${result.accounts} accounts, ${result.categories} categories, ${result.savingsGoals} goals, ${result.recurring} recurring, ${result.debts} debts, ${result.householdMembers} household members`
       );
       setImportError(false);
     } catch (err: unknown) {

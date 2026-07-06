@@ -24,14 +24,14 @@ const Home = () => {
   const { currency } = useCurrency();
   const { categories } = useCategories();
   const { totalBudget } = useTotalBudget();
-  const { contributors, totalFund } = useHousehold();
+  const { members, contributions, totalFund } = useHousehold();
   const { dueItems, markAdded } = useRecurringTransactions();
 
   const categoryMap = Object.fromEntries(
     categories.map((c) => [c.id, { name: c.name, emoji: c.emoji }])
   );
 
-  const activeContributors = contributors.filter((c) => c.status === 'active');
+  const activeContributors = members.filter((m) => m.status === 'active');
   const alertBudgets = budgets.filter((b) => (b.spent / b.limit) * 100 >= 75);
 
   const now = new Date();
@@ -92,10 +92,10 @@ const Home = () => {
           {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </span>
       </div>
-
       {activeContributors.length > 0 ? (
         <HouseholdFundCard
-          contributors={contributors}
+          members={members}
+          contributions={contributions}
           totalFund={totalFund}
           currency={currency}
         />

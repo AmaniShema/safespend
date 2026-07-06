@@ -1,37 +1,48 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Contributor } from '../db/household';
+import type { Contributor, HouseholdContribution } from '../db/household';
 import {
-  getAllContributors,
-  addContributor,
-  updateContributorAmount,
-  toggleContributorStatus,
-  setContributorRecorded,
-  deleteContributor,
+  getAllMembers,
+  getAllContributions,
+  addMember,
+  toggleMemberStatus,
+  deleteMember,
+  addContribution,
+  updateContribution,
+  setContributionRecorded,
+  deleteContribution,
   initHouseholdTable,
+  getCurrentMonth,
 } from '../db/household';
 
 interface UseHouseholdReturn {
-  contributors: Contributor[];
+  members: Contributor[];
+  contributions: HouseholdContribution[];
+  currentMonth: string;
   totalFund: number;
   isLoading: boolean;
-  addPerson: (data: { name: string; amount: number }) => Promise<void>;
-  editAmount: (id: string, amount: number) => Promise<void>;
+  addPerson: (name: string) => Promise<void>;
   toggleStatus: (id: string) => Promise<void>;
-  markRecorded: (id: string, recorded: boolean) => Promise<void>;
   removePerson: (id: string) => Promise<void>;
+  addMonthContribution: (contributorId: string, amount: number, month: string, note: string) => Promise<HouseholdContribution>;
+  editContribution: (id: string, amount: number, note: string) => Promise<void>;
+  markRecorded: (id: string, recorded: boolean) => Promise<void>;
+  removeContribution: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
 export const useHousehold = (): UseHouseholdReturn => {
-  const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [members, setMembers] = useState<Contributor[]>([]);
+  const [contributions, setContributions] = useState<HouseholdContribution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const currentMonth = getCurrentMonth();
 
   const refresh = useCallback(async () => {
     try {
       setIsLoading(true);
       await initHouseholdTable();
-      const data = await getAllContributors();
-      setContributors(data);
+      const [m, c] = await Promise.all([getAllMembers(), getAllContributions()]);
+      setMembers(m);
+      setContributions(c);
     } catch (err) {
       console.error('Household error:', err);
     } finally {
@@ -39,38 +50,55 @@ export const useHousehold = (): UseHouseholdReturn => {
     }
   }, []);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  const addPerson = async (data: { name: string; amount: number }): Promise<void> => {
-    await addContributor(data);
-    await refresh();
-  };
-
-  const editAmount = async (id: string, amount: number): Promise<void> => {
-    await updateContributorAmount(id, amount);
+  const addPerson = async (name: string): Promise<void> => {
+    await addMember(name);
     await refresh();
   };
 
   const toggleStatus = async (id: string): Promise<void> => {
-    await toggleContributorStatus(id);
-    await refresh();
-  };
-
-  const markRecorded = async (id: string, recorded: boolean): Promise<void> => {
-    await setContributorRecorded(id, recorded);
+    await toggleMemberStatus(id);
     await refresh();
   };
 
   const removePerson = async (id: string): Promise<void> => {
-    await deleteContributor(id);
+    await deleteMember(id);
     await refresh();
   };
 
-  const totalFund = contributors
-    .filter((c) => c.status === 'active')
+  const addMonthContribution = async (
+    contributorId: string, amount: number, month: string, note: string
+  ): Promise<HouseholdContribution> => {
+    const c = await addContribution(contributorId, amount, month, note);
+    await refresh();
+    return c;
+  };
+
+  const editContribution = async (id: string, amount: number, note: string): Promise<void> => {
+    await updateContribution(id, amount, note);
+    await refresh();
+  };
+
+  const markRecorded = async (id: string, recorded: boolean): Promise<void> => {
+    await setContributionRecorded(id, recorded);
+    await refresh();
+  };
+
+  const removeContribution = async (id: string): Promise<void> => {
+    await deleteContribution(id);
+    await refresh();
+  };
+
+  // Total fund = all recorded contributions
+  const totalFund = contributions
+    .filter((c) => c.recorded)
     .reduce((sum, c) => sum + c.amount, 0);
 
-  return { contributors, totalFund, isLoading, addPerson, editAmount, toggleStatus, markRecorded, removePerson, refresh };
+  return {
+    members, contributions, currentMonth, totalFund, isLoading,
+    addPerson, toggleStatus, removePerson,
+    addMonthContribution, editContribution, markRecorded, removeContribution,
+    refresh,
+  };
 };
