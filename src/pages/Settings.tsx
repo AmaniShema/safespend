@@ -263,6 +263,23 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Shopping List */}
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Shopping</p>
+          <div className="bg-gray-900 rounded-2xl border border-gray-800">
+            <button onClick={() => navigate("/shopping")} className="w-full flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🛒</span>
+                <div className="text-left">
+                  <p className="text-white text-sm">Shopping Lists</p>
+                  <p className="text-gray-500 text-xs">Plan, shop, track actual prices</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+
         {/* Recurring Transactions */}
         <div>
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-1">Recurring</p>

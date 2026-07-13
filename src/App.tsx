@@ -16,6 +16,8 @@ import SavingsGoals from './pages/SavingsGoals';
 import SavingsGoalDetail from './pages/SavingsGoalDetail';
 import HouseholdFund from './pages/HouseholdFund';
 import RecurringTransactions from './pages/RecurringTransactions';
+import ShoppingLists from './pages/ShoppingLists';
+import ShoppingListDetail from './pages/ShoppingListDetail';
 import DebtTracker from './pages/DebtTracker';
 import LockScreen from './components/LockScreen';
 import { isBiometricEnabled, isBiometricAvailable } from './utils/biometric';
@@ -77,6 +79,8 @@ const App = () => {
         <Route path="/savings-goals/:id" element={<SavingsGoalDetail />} />
         <Route path="/household" element={<HouseholdFund />} />
         <Route path="/recurring" element={<RecurringTransactions />} />
+        <Route path="/shopping" element={<ShoppingLists />} />
+        <Route path="/shopping/:id" element={<ShoppingListDetail />} />
         <Route path="/debts" element={<DebtTracker />} />
       </Routes>
     </BrowserRouter>
